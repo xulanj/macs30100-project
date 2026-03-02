@@ -4,6 +4,12 @@
 
 This project delves in the prediction of militarized interstate disputes (MIDs) by means of supervised machine learning methods.
 
+## Project owner 
+- **Xulan Jiang**
+
+**Course**: MACSS 30100 (Winter 2026)
+**Institution**: University of Chicago
+
 ## Project Structure
 
 ```
