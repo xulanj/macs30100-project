@@ -15,9 +15,7 @@ This project delves in the prediction of militarized interstate disputes (MIDs) 
 ```
 macs30100-project/
 ├── README.md                      # this file
-├── data.r                         # aggregate raw data into cleaned data for analysis
-├── eda.r                          # EDA
-├── model.r                        # main ML modelling script
+├── code.r                         # R script for the entire project
 └── data/                          # repository of downloaded raw data
     ├── dyads.csv                           # cross-sectional data containg all possible dyads of ccode
     ├── dyadic_mid_4.03.dta                 # Dyadic MID Data (v4.0)
