@@ -11,13 +11,13 @@ This project asks whether structural political and economic variables can meanin
 - **Why this matters:**
 Understanding the conditions under which interstate disputes occur is central to the study of international conflict. Improving predictive models of MID onset can help scholars evaluate the informational value of commonly used structural variables and assess whether more flexible modeling approaches provide meaningful forecasting gains. More broadly, the findings contribute to debates on the predictability of rare political events and the potential role of machine learning methods in conflict forecasting and early warning systems.
 
-## Project owner 
+# Project owner 
 - **Xulan Jiang**
 
 **Course**: MACSS 30100 (Winter 2026)
 
 
-## Project Structure
+# Repo Structure
 
 ```
 macs30100-project/
