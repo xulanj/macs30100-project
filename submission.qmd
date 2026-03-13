@@ -1,0 +1,543 @@
+---
+title: "Predicting MID Onset: A Comprehensive Machine Learning Approach"
+author: "Xulan Jiang, xulanj@uchicago.edu"
+date: "2026-03-12"
+format: html
+bibliography: bibliography.bib
+---
+
+\newpage
+\tableofcontents
+\newpage
+
+
+Note: This report is written in Quarto (.qmd). I encountered technical issues rendering the document to PDF via LaTeX, so I am submitting the HTML version, which renders all figures, tables, and outputs correctly.
+
+
+## Supplementary Materials
+
+All the codes and data pertinent to this project are available on GitHub repository: https://github.com/xulanj/macs30100-project.
+
+## Setup
+
+```{r setup}
+library(countrycode)
+library(dplyr)
+library(factoextra)
+library(ggcorrplot)
+library(ggplot2)
+library(ggrepel)
+library(glmnet)
+library(haven)
+library(parsnip)
+library(pdp)
+library(ranger)
+library(readxl)
+library(tidymodels)
+library(vip)
+library(WDI)
+```
+
+
+## Introduction
+
+Militarized interstate disputes (MIDs) are a central subject in the study of international conflict. MID refers to situations in which one state threatens, displays, or uses military force against another state short of full-scale war. Compared with interstate wars, which are typically defined by the threshold of at least 25 battlefield deaths, MIDs represent lower-intensity but far more frequent forms of interstate confrontation. Studying MID onset therefore provides a useful opportunity to examine the dynamics of conflict escalation and to evaluate whether observable structural factors can help predict when disputes are likely to occur. Improving the predictive understanding of such events is important not only for theoretical debates in international relations but also for identifying conditions under which interstate tensions are most likely to escalate.
+
+This project asks to what extent structural variables commonly used in the international conflict literature provide meaningful predictive signal for MID onset, and whether machine learning models meaningfully improve predictive performance relative to traditional statistical approaches such as logistic regression. Rather than asking simply whether machine learning can predict conflict, the goal is to examine whether flexible machine learning algorithms capture additional predictive structure in dyadic conflict data beyond the relationships typically modeled in conventional regression frameworks. Using dyad–year data from 1946 to 2014, I evaluate the predictive performance of several models, including logistic regression, LASSO-regularized logistic regression, random forests, support vector machines, and gradient boosting. The models are trained using a set of covariates commonly studied in the international conflict literature, including contiguity, joint democracy, alliances, relative capabilities, trade dependence, and economic indicators. Based on existing theoretical expectations, I hypothesize that dyads that are geographically contiguous, exhibit greater capability parity, and have weaker democratic institutions are more likely to experience MID onset. At the same time, recent work in conflict forecasting suggests that machine learning methods may capture nonlinear relationships and complex interactions among predictors that traditional statistical models often miss [@muchlinski2016comparing, @cranmer2017can]. These models therefore offer a promising approach for improving predictive performance in rare-event conflict settings. Improving predictive models of MID onset also has broader implications for early warning systems and conflict prevention efforts, as better forecasts can help policymakers identify conditions under which interstate tensions are more likely to escalate.
+
+A growing literature in political science has examined the use of machine learning for conflict prediction. Early work in the conflict forecasting tradition relied primarily on logistic regression and related statistical models to estimate the probability of conflict onset using structural covariates such as power ratios, geographic proximity, and regime type. More recent studies suggest that machine learning algorithms may improve predictive performance by capturing nonlinear interactions and complex relationships among predictors. For example, [@muchlinski2016comparing] demonstrate that random forest models substantially outperform logistic regression in predicting civil war onset, while [@cranmer2017can] highlight the broader potential of machine learning approaches for political forecasting. At the same time, several scholars caution that predictive gains may depend heavily on the availability of informative covariates rather than the choice of algorithm itself. This project therefore contributes to the literature by comparing several machine learning approaches with traditional logistic regression using commonly employed structural predictors of interstate conflict.
+
+## Data
+
+The unit of analysis is dyad-year, ranging from 1946 to 2014. The dependent variable is a binary measure of MID onset for dyad $ij$ in year $t$. I use the Dyadic MID Data (v4.0) from the Correlates of War (COW) project [@palmer2015mid4]. 
+
+```{r mid}
+# dyadic MID data
+mid <- read_dta("D:/MACS_30100/MLproject/dyadic_mid_4.03.dta")
+# complementary data mapping all possible country dyads
+dyad <- read.csv("D:/MACS_30100/MLproject/dyads.csv")
+
+# expand dyadic pairs to cover the entire analysis period
+dyad <- dyad[dyad$year >= 1946, ]
+dyad_pairs <- unique(dyad[, c("ccode1", "ccode2")])
+extension <- 2009:2014
+dyad_extend <- merge(dyad_pairs, data.frame(year = extension))
+dyad_all <- rbind(dyad, dyad_extend)
+df <- dyad_all
+
+# framework of analysis data
+mid <- mid %>% rename(ccode1 = statea, ccode2 = stateb)
+mid <- mid[mid$year >= 1946, ]
+mid$mid <- 1
+df <- df %>% 
+  left_join(mid %>% 
+              select(year, ccode1, ccode2, mid), 
+            by = c("year", "ccode1", "ccode2"))
+df$mid[is.na(df$mid)] <- 0
+```
+
+I also include several covariates. First, I include contiguity information [@stinnett2002correlates] from COW's Direct Contiguity Data (v3.2). With the distance between two states increasing, the potential of the initiation of a MID event is likely to decline as conflict with more distant states is more costly and states further apart have fewer issues to dispute.
+
+```{r con}
+con <- read_dta("D:/MACS_30100/MLproject/contdird.dta")
+con <- con[con$year >= 1946 & con$year <= 2014, ]
+con <- con %>% 
+  rename(ccode1 = state1no, ccode2 = state2no)
+df <- df %>% 
+  left_join(con %>% select(year, ccode1, ccode2, conttype), 
+            by = c("year", "ccode1", "ccode2"))
+```
+
+Second, I include a measure of joint democracy given that numerous studies posit and demonstrate that two democracies are less likely to enter into a dispute than other dyads [@levy1988domestic, @oneal1997classical, @imai2021robustness]. To measure joint democracy, I use a dichotomous variable that codes whether both states receive a score of 6 or higher on the Polity2 variable from the PolityIV data set [@marshall2002polity]. 
+
+```{r dem}
+polity <- read_xls("D:/MACS_30100/MLproject/p5v2018.xls")
+polity <- polity[polity$year >= 1946 & polity$year <= 2014, ]
+df <- df %>% 
+  left_join(polity %>% select(ccode, year, polity2), 
+            by = c("year", "ccode1" = "ccode"))
+df <- df %>% rename(polity2a = polity2)
+df <- df %>% 
+  left_join(polity %>% select(ccode, year, polity2), 
+            by = c("year", "ccode2" = "ccode"))
+df <- df %>% rename(polity2b = polity2)
+df$joint_dem <- ifelse(df$polity2a >= 6 & df$polity2b >=6, 1, 0)
+```
+
+Third, I include a binary alliance variable from COW's Formal Alliances Data (v4.1) [@gibler2008international] because challengers who expect support from outside states may believe they are more likely to succeed in accomplishing their goals through the threat or use of force and will be more likely to initiate a dispute. 
+
+```{r ally}
+alliance <- read_dta("D:/MACS_30100/MLproject/alliance_v4.1_by_dyad_yearly.dta")
+alliance <- alliance[alliance$year >= 1946, ]
+alliance$ally <- 1
+df <- df %>% 
+  left_join(alliance %>% select(year, ccode1, ccode2, ally), 
+            by = c("year", "ccode1", "ccode2"))
+df$ally[df$year <= 2012 & is.na(df$ally)] <- 0
+```
+
+Fourth, I include a variable that codes the potential challenger’s likelihood of defeating the potential target in a conflict [@johnson2011defense]. To operationalize this variable, I use the ratio of the first state's military capabilities to the sum of the second state's military capabilities in a dyad, data from COW's National Material Capabilities Data (v6.0) [@singer2012capability]. 
+
+```{r nmc}
+nmc <- read_dta("D:/MACS_30100/MLproject/NMC-60-abridged.dta")
+nmc <- nmc[nmc$year >= 1946 & nmc$year <= 2014, ]
+df <- df %>% 
+  left_join(nmc %>% select(ccode, year, cinc), 
+            by = c("year", "ccode1" = "ccode"))
+df <- df %>% rename(cinc1 = cinc)
+df <- df %>% 
+  left_join(nmc %>% select(ccode, year, cinc), 
+            by = c("year", "ccode2" = "ccode"))
+df <- df %>% rename(cinc2 = cinc)
+df$nmc_ratio <- pmin(df$cinc1, df$cinc2) / pmax(df$cinc1, df$cinc2)
+```
+
+Fifth, I include information about the amount of smooth trade in a dyad as well as a trade spike dummy and a trade decline dummy from COW's Trade Data (v4.0) [@barbieri2016correlates].
+
+```{r trade}
+trade <- read.csv("D:/MACS_30100/MLproject/Dyadic_COW_4.0.csv")
+df <- df %>% left_join(trade %>% 
+    mutate(smoothtotrade = ifelse(smoothtotrade < 0, NA, smoothtotrade)) %>%
+    select(year, ccode1, ccode2, smoothtotrade, trdspike, tradedip), 
+    by = c("year", "ccode1", "ccode2"))
+df$logtrade <- log(df$smoothtotrade + 1)
+```
+
+Finally, I complement the dataset with additional economic indicators drawn from World Bank's World Development Indicators (WDI), including GDP, GDP per capita, population, territorial area, and foreign direct investment (FDI), which capture key dimensions of economic capacity and development.
+
+```{r wdi}
+wdi <- as.data.frame(WDI(country = "all", 
+                         indicator = c("gdp" = "NY.GDP.MKTP.KD", 
+                                       "gdppp" = "NY.GDP.PCAP.KD", 
+                                       "pop" = "SP.POP.TOTL", 
+                                       "area" = "AG.LND.TOTL.K2",
+                                       "fdi" = "BX.KLT.DINV.CD.WD"),
+                         start = 1960, end = 2014))
+wdi$ccode <- countrycode(wdi$iso3c, origin = "iso3c", destination = "cown")
+df <- df %>%
+  left_join(wdi %>% select(ccode, year, gdp, gdppp, pop, area, fdi),
+            by = c("year", "ccode1" = "ccode")) %>%
+  rename(gdp1 = gdp, gdppp1 = gdppp, pop1 = pop, area1 = area, fdi1 = fdi)
+df <- df %>%
+  left_join(wdi %>% select(ccode, year, gdp, gdppp, pop, area, fdi),
+            by = c("year", "ccode2" = "ccode")) %>%
+  rename(gdp2 = gdp, gdppp2 = gdppp, pop2 = pop, area2 = area, fdi2 = fdi)
+
+df$gdp_ratio <- log(df$gdp1 / df$gdp2)
+df$gdppp_ratio <- log(df$gdppp1 / df$gdppp2)
+df$pop_ratio <- log(df$pop1 / df$pop2)
+df$area_ratio <- log(df$area1 / df$area2)
+df$fdi_ratio <- log((df$fdi1+1) / (df$fdi2+1))
+```
+
+Now the data for further analysis is prepared. Prior to EDA, several limitations of the data should be acknowledged. First, MID onset is an extremely rare event, accounting for less than 0.5% of all dyad-year observations, which creates a severe class imbalance problem for prediction models. Second, many variables in cross-national datasets contain measurement error or missing values, particularly economic indicators in earlier decades. Finally, dyadic conflict datasets may suffer from reporting bias, as minor disputes are more likely to be recorded among major powers than among smaller states.
+
+
+## EDA
+
+In this section, I present a comprehensive illustration of exploratory data analysis (EDA). I employ both standard EDA techniques and unsupervised principal component analysis (PCA). The entire dataset is used to provide a holistic overview of the data during this exploratory stage. Since PCA is applied purely for descriptive purposes and is not used in model training or manipulation of the test data, concerns about data leakage do not arise.
+
+```{r eda}
+summary(df)
+table(df$mid)
+table(df$conttype)
+table(df$joint_dem)
+table(df$ally)
+hist(df$nmc_ratio)
+hist(df$logtrade)
+df %>% group_by(mid) %>%
+  summarise(joint_dem = mean(joint_dem, na.rm = TRUE),
+            ally = mean(ally, na.rm = TRUE),
+            nmc_ratio = mean(nmc_ratio, na.rm = TRUE),
+            trade = mean(logtrade, na.rm = TRUE))
+```
+
+The distribution highlights the extreme rarity of MID onset, with fewer than 1% of observations corresponding to conflict events. Most dyads are non-contiguous and non-allied, and only about 15% are joint democracies. MID onsets are less common among joint democracies but substantially more common among allied dyads. MID dyads also tend to exhibit greater capability parity and significantly higher logged trade levels on average. In addition, given the disproportionate amount of missing values, I filter them out in the later modeling stage.
+
+```{r rare}
+ggplot(df, aes(mid)) +
+  geom_bar(fill = "#F0E442") +
+  geom_text(stat = 'count', 
+            aes(label = after_stat(count)), 
+            vjust = -0.5,    
+            size = 4) +
+  labs(title = "Distribution of MID Onset",
+       x = "MID Onset",
+       y = "Count") +
+  theme_minimal()
+```
+
+
+I make some visualizations for intuitive presentations. First, I plot the frequency of MID events throughout the covered period. While the frequency fluctuates significantly over the decades, there is a prominent peak after the termination of Cold War in the late 1990s. Following this spike, the number of incidents generally declined before showing a moderate increase again in the early 2010s.
+
+```{r plot1}
+mid_by_year <- df %>% group_by(year) %>% summarise(mid_count = sum(mid, na.rm = TRUE))
+
+ggplot(mid_by_year, aes(x = year, y = mid_count)) +
+  geom_area(fill = "#E69F00", alpha = 0.2) +
+  geom_line(color = "#F0E442", size = 1) +
+  geom_point(color = "#D55E00", size = 1.5, alpha = 0.6) +
+  scale_x_continuous(breaks = seq(1940, 2020, by = 10),
+                     minor_breaks = seq(1946, 2014, by = 1),
+                     limits = c(1946, 2014),
+                     expand = c(0.02, 0)) +
+  theme_minimal(base_size = 14) +
+  labs(title = "Events of MID by year",
+    x = "Year", y = "MID count",) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"))
+```
+
+Second, I show the the distribution of MID events by contiguity types. It clearly show that direct contiguity status via land border reports the most significant frequency of MID events throughout the period. Dyads with no recorded contiguity types (i.e., geographically distant pairs) consists of the second largest group of MID events, which is not surprising as they constitute the overwhelming majority of all dyad-year observations in the international system.
+
+```{r plot2}
+mid_by_con <- df %>%
+  mutate(distance_grp = case_when(
+    conttype == 1 ~ "1: Land Border",
+    conttype == 2 ~ "2: 12mi Sea",
+    conttype == 3 ~ "3: 24mi Sea",
+    conttype == 4 ~ "4: 150mi Sea",
+    conttype == 5 ~ "5: 400mi Sea",
+    is.na(conttype) ~ "6: Non-Contiguous",
+    TRUE ~ as.character(conttype)
+  )) %>%
+  group_by(year, distance_grp) %>%
+  summarise(mid_count = sum(mid, na.rm = TRUE), .groups = "drop")
+
+ggplot(mid_by_con, 
+       aes(x = year, y = mid_count, color = distance_grp, fill = distance_grp)) +
+  geom_area(alpha = 0.3, show.legend = FALSE) +
+  geom_line(size = 0.8) +
+  facet_wrap(~distance_grp, scales = "free_y", ncol = 2) + 
+  scale_x_continuous(breaks = seq(1940, 2020, by = 10)) +
+  scale_color_viridis_d(option = "plasma") +
+  scale_fill_viridis_d(option = "plasma") +
+  theme_minimal(base_size = 12) +
+  labs(title = "Events of MID by contiguity types",
+       x = "Year", y = "MID count") +
+  theme(
+    strip.background = element_rect(fill = "#999999", color = NA),
+    strip.text = element_text(face = "bold"),
+    panel.spacing = unit(1, "lines"),
+    legend.position = "none"
+  )
+```
+
+Third, I present the discrepancy of MID onset probability by joint democracy. MIDs are consistently more frequent among non-joint democracy dyads than those joint democratic counterparts, aligning with the well-known theoretical contention of democratic peace.
+
+```{r plot3}
+mid_by_dem <- df %>%
+  filter(!is.na(joint_dem)) %>%
+  mutate(Democracy = ifelse(joint_dem == 1, "Joint Democracy", "Non-Joint Democracy")) %>%
+  group_by(year, Democracy) %>%
+  summarise(mid_rate = mean(mid, na.rm = TRUE), .groups = "drop")
+
+ggplot(mid_by_dem, aes(x = year, y = mid_rate, 
+                       color = Democracy, fill = Democracy)) +
+  geom_area(alpha = 0.15, position = "identity") +
+  geom_line(size = 1.2) +
+  scale_x_continuous(breaks = seq(1940, 2020, by = 10), 
+                     limits = c(1946, 2014)) +
+  scale_color_manual(values = c("Joint Democracy" = "#0072B2", 
+                                "Non-Joint Democracy" = "#E69F00")) +
+  scale_fill_manual(values = c("Joint Democracy" = "#0072B2", 
+                               "Non-Joint Democracy" = "#E69F00")) +
+  theme_minimal(base_size = 14) +
+  labs(title = "MID by Joint Democracy",
+    x = "Year", y = "MID Frequency") +
+  theme(legend.position = "bottom",
+        plot.title = element_text(face = "bold", size = 16),
+        panel.grid.minor = element_blank())
+```
+
+Next, I present the correlation matrix among variables. The correlation matrix indicates that pairwise correlations among predictors are generally modest, suggesting no severe multicollinearity concerns. MID onset is weakly correlated with most covariates, which is consistent with it being a rare event and influenced by multiple factors rather than any single dominant predictor.
+
+```{r corr}
+corr_matrix <- cor(df %>% 
+                     select(mid, conttype, joint_dem, ally, 
+                            nmc_ratio, logtrade, trdspike, 
+                            tradedip, gdp_ratio, gdppp_ratio, 
+                            area_ratio, pop_ratio, fdi_ratio), 
+                   use = "complete.obs")
+ggcorrplot(corr_matrix, 
+           hc.order = TRUE,
+           type = "lower",
+           lab = TRUE,
+           lab_size = 3,
+           colors = c("#E15759", "white", "#56B4E9"), 
+           title = "Correlation Matrix",
+           ggtheme = theme_minimal())
+```
+
+Moreover, I employ PCA to highlight informative features of the dataset for descriptive purposes. Since PCA is sensitive to the scale of variables and the variables in our dataset vary substantially in magnitude, I use the built-in parameter "scale = TRUE" in the \textit{prcomp()} function to standardize the variables prior to analysis. In addition, I exclude dummy variables from the PCA, as the method is designed to capture variance among continuous features. This ensures that the principal components reflect underlying patterns in the data rather than differences in measurement scale. The resulting components provide a compact summary of the correlation structure among the explanatory variables.
+
+```{r pca}
+df_pca <- df[, 5:ncol(df)]
+df_pca <- na.omit(df_pca)
+dummy <- sapply(df_pca, function(x) length(unique(x)) <= 2)
+df_pca <- df_pca[, !dummy]
+pca <- prcomp(df_pca, center = TRUE, scale. = TRUE)
+
+summary(pca)
+pca$center  
+pca$scale    
+pca$rotation 
+
+fviz_pca_var(pca, col.var = "contrib", repel = TRUE,
+             gradient.cols = c("#0072B2", "#F0E442", "#009E73"))
+```
+
+
+## Modelling Pipeline
+
+In this section, I mainly rely on tidymodels package to construct a pipeline for modelling. I employ several kinds of models to predict the MID onset on the test data based on the fitted models on the training data. Given the disproportionate amount of missingness shown in the description, I aggressively filter out observations with missing values, which still yields reasonable observations for training and testing. Split the data into training and test data sets based on time period as follows:
+
+```{r set}
+train <- df %>% filter(year <= 2000)
+test  <- df %>% filter(year > 2000)
+xvar <- c("ccode1", "ccode2", "year", "mid", "conttype", "joint_dem", 
+          "ally", "nmc_ratio", "logtrade", "trdspike", "tradedip",
+          "gdp_ratio", "gdppp_ratio", "pop_ratio", "area_ratio", "fdi_ratio")
+train <- train[complete.cases(train[, xvar]), xvar]
+test <- test[complete.cases(test[, xvar]), xvar]
+train$mid <- factor(train$mid, levels = c(1,0))
+test$mid  <- factor(test$mid, levels = c(1,0))
+```
+
+Before model estimation, continuous predictors are standardized using centering and scaling. Standardization is particularly important for machine learning models such as SVM and regularized regression, which are sensitive to differences in variable scale. I use logistic regression as the baseline model, as it is perhaps the most widely used statistical method for prediction in established political science research. I then complement it with a LASSO-regularized logistic regression. The LASSO model uses 10-fold cross-validation to select the optimal penalty parameter, shrinking less informative coefficients toward zero to reduce overfitting and perform implicit variable selection. Second, I implement a Random Forest classifier. Previous work has shown that Random Forest models can substantially outperform logistic regression in predicting conflict onset under conditions of extreme class imbalance [@muchlinski2016comparing]. Random Forests are able to capture nonlinear relationships and complex interactions among predictors that linear models may miss. Third, I employ a support vector machine (SVM) with a radial basis function kernel, which is well suited for classification problems in high-dimensional feature spaces and can flexibly model nonlinear decision boundaries. Finally, I implement a gradient boosting model using XGBoost, a powerful ensemble learning method that builds trees sequentially to minimize prediction error. XGBoost is particularly effective at capturing complex nonlinear patterns and interactions while incorporating regularization to prevent overfitting.
+
+```{r workflow}
+data_recipe <- recipe(mid ~ conttype + joint_dem + ally + nmc_ratio + 
+                        logtrade + trdspike + tradedip + gdp_ratio + 
+                        gdppp_ratio + pop_ratio + area_ratio + fdi_ratio, 
+                      data = train) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_scale(all_predictors()) %>%
+  step_center(all_predictors())
+
+# Model Specfications
+# logit
+model1 <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification")
+
+# lasso
+model2 <- logistic_reg(penalty = tune(), mixture = 1) %>%
+  set_engine("glmnet") %>%
+  set_mode("classification")
+
+# random forest
+model3 <- rand_forest(mtry = tune(), trees = 1000, min_n = tune()) %>% 
+  set_engine("ranger", 
+             importance = "permutation",
+             probability = TRUE) %>%
+  set_mode("classification")
+
+# svm
+model4 <- svm_rbf(cost = tune(), rbf_sigma = tune()) %>%
+  set_engine("kernlab") %>%
+  set_mode("classification")
+
+# xgboost
+model5 <- boost_tree(trees = tune(), tree_depth = tune(), learn_rate = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("xgboost")
+
+
+# workflow
+wf <- workflow_set(preproc = list(recipe = data_recipe),
+                   models = list(logit = model1,
+                                 lasso = model2,
+                                 rf = model3,
+                                 svm = model4,
+                                 xgboost = model5))
+
+```
+
+To evaluate model performance and tune hyperparameters, I implement 10-fold cross-validation on the training data. Within each fold, the models are trained on four subsets of the data and validated on the remaining subset, allowing performance to be assessed across multiple resamples and reducing the risk of overfitting to a single train–test split. Hyperparameters for the models are tuned using a grid search procedure, where a set of candidate parameter values is evaluated for each model specification. Model performance is primarily assessed using the area under the receiver operating characteristic curve (ROC AUC), which is particularly appropriate as MID onset is an extremely rare event.
+
+```{r hyper}
+cv_folds <- vfold_cv(train, v = 10)
+
+wf_results <- wf %>% 
+  workflow_map(fn = "tune_grid", 
+               resamples = cv_folds, 
+               grid = 5,
+               metrics = metric_set(roc_auc, accuracy),
+               verbose = TRUE)
+
+autoplot(wf_results, 
+         rank_metric = "roc_auc", 
+         metric = "roc_auc") +
+  geom_text_repel(aes(label = wflow_id, 
+                      y = mean +1.95*std_err), 
+                  max.overlaps = 10) +
+  theme_minimal()
+```
+
+## Results and Evaluation
+
+After completing the cross-validation and hyperparameter tuning process, I identify the best-performing model based on the evaluation metrics collected from the workflow results. Specifically, the model with the highest accuracy is selected as the optimal specification. The corresponding workflow is then extracted and finalized using the best hyperparameter combination obtained during tuning. This finalized workflow is refitted on the full training dataset to ensure that the model benefits from all available training observations. The trained model is subsequently used to generate predictions on the held-out test dataset. To evaluate predictive performance, I compute a confusion matrix comparing predicted and observed MID outcomes, and I further calculate the area under the receiver operating characteristic curve (ROC AUC). In addition, I visualize the ROC curve to assess the model’s ability to distinguish between conflict and non-conflict cases across different classification thresholds.
+
+```{r result}
+## collect metrics
+results <- wf_results %>% collect_metrics()
+
+# 1. Select the best model
+best_model <- results %>% 
+  filter(.metric == "roc_auc") %>%
+  arrange(desc(mean)) %>%
+  slice(1) %>%
+  pull(wflow_id)
+
+cat('best model is: ',best_model, '\n') 
+
+# extract the optimization results of the model
+best_tune_results <- wf_results %>% 
+  extract_workflow_set_result(id = best_model)
+
+# choose the optimal parameter combination
+best_params <- best_tune_results %>% 
+  select_best(metric = "roc_auc")
+
+# return the optimal parameters
+best_workflow <- wf_results %>% 
+  extract_workflow(id = best_model) %>% 
+  finalize_workflow(best_params)
+
+# 2. Refit the best model on the full training data
+wf_best_fit <- best_workflow %>% fit(data = train)
+summary(wf_best_fit)
+
+# 3. Make predictions on the test data
+pred <- wf_best_fit %>% 
+  predict(new_data = test, type = "class") %>% 
+  bind_cols(test)
+```
+
+The confusion matrix indicates that the model correctly identifies 62 MID events (true positives) and 5,352 peaceful dyad–years (true negatives), while producing 38 false positives and missing 309 actual conflict events (false negatives). This corresponds to an overall accuracy of approximately 94 percent. However, because MID onset is an extremely rare event in the dataset, accuracy alone is not an informative performance measure. The model achieves a precision of about 0.62, meaning that roughly sixty-two percent of predicted conflict cases correspond to actual MID onsets. In contrast, recall is relatively low at approximately 0.17, indicating that the model detects only a limited share of all conflict events. At the same time, the model exhibits very high specificity (around 0.99), reflecting its strong ability to correctly classify peaceful dyads. Overall, the results suggest that the model is conservative in predicting conflict: when it signals a MID event it is often correct, but it misses a substantial number of actual disputes due to the extreme class imbalance in the data.
+
+```{r matrix}
+# Visualize the predictions
+conf_mat <- pred %>% 
+  conf_mat(truth = mid, estimate = .pred_class)
+
+print(conf_mat)
+
+plot(table(pred$mid, pred$.pred_class),
+     col = "#56B4E9",
+     main = "Confusion Matrix",
+     xlab = "True Class",
+     ylab = "Predicted Class")
+```
+
+The ROC AUC on the held-out test data is approximately 0.79, indicating that the model is able to meaningfully distinguish dyads that experience MID onset from those that do not. Although MID onset is an extremely rare event in the dataset, the model captures sufficient predictive signal from structural covariates to rank higher-risk dyads above lower-risk ones with reasonably strong accuracy.
+
+```{r ROC}
+pred.prob <- wf_best_fit %>%
+  predict(new_data = test , type = "prob") %>%
+  bind_cols(test)
+
+# AUC
+the_roc_auc <- roc_auc(pred.prob, truth = mid, .pred_1)
+
+# ROC curve
+pred.prob %>% roc_curve(mid, .pred_1) %>% 
+  autoplot()+ ggtitle(paste(the_roc_auc, collapse = ", ") )
+```
+
+I present the variable importance rankings from the best-performing model. The most influential predictors are the relative economic and demographic indicatorsbetween dyad members, including GDP ratio, population ratio, territorial area ratio, and GDP per capita ratio. These variables capture the relative size and economic capacity of states within a dyad, suggesting that asymmetries in economic and demographic characteristics contain substantial predictive signal for MID onset. Measures related to material power and economic interaction also appear among the top predictors. The capability ratio (nmc_ratio) and the logged trade variable (logtrade) contribute meaningfully to the model, indicating that both military capabilities and economic interdependence are associated with variation in predicted conflict risk. Geographic contiguity (conttype) shows moderate importance in the model, reflecting the role of spatial proximity in shaping opportunities for interstate disputes. Other variables, including foreign direct investment ratio, joint democracy, and formal alliances, appear lower in the importance ranking, suggesting that these factors contribute less to predictive performance in the current specification.
+
+```{r vip}
+rf_fit <- wf_best_fit %>%
+  extract_fit_parsnip() %>%
+  .$fit
+
+vip(rf_fit, num_features = 10)
+```
+
+I show partial dependence plots (PDPs) for the 3 most important predictors identified by the VIP plot: gdp_ratio, pop_ratio, and area_ratio as they affect the model’s predicted probability of MID onset while holding other variables constant. Across all three variables, the predicted probability of conflict generally increases as the ratios become larger, indicating that greater asymmetry between two states is associated with a higher predicted risk of dispute. In particular, the predicted probability rises from roughly 0.07 to about 0.23 across the range of gdp_ratio, from about 0.09 to 0.17 for pop_ratio, and from around 0.06 to 0.23 for area_ratio. Overall, these patterns suggest that structural differences in economic capacity, population size, and territorial area between dyad members are important predictors in the model, with larger imbalances corresponding to higher predicted probabilities of militarized interstate disputes.
+
+```{r pdp}
+prep_rec <- prep(data_recipe)
+train_processed <- bake(prep_rec, new_data = train)
+
+pdp1 <- pdp::partial(rf_fit, pred.var = "gdp_ratio",
+                     train = train_processed, prob = TRUE)
+plotPartial(pdp1)
+
+pdp2 <- pdp::partial(rf_fit, pred.var = "pop_ratio",
+                     train = train_processed, prob = TRUE)
+plotPartial(pdp2)
+
+pdp3 <- pdp::partial(rf_fit, pred.var = "area_ratio",
+                     train = train_processed, prob = TRUE)
+plotPartial(pdp3)
+```
+
+To summarize, these findings broadly align with previous research on conflict prediction. [@muchlinski2016comparing] demonstrate that machine learning models often outperform traditional statistical models in forecasting interstate disputes, largely due to their ability to capture nonlinear interactions among predictors. At the same time, the relatively modest predictive gains observed here are consistent with recent work suggesting that structural variables alone may provide limited predictive power for rare political events.
+
+
+## Potential Limitations
+
+Predicting MID onset presents a fundamental methodological challenge due to extreme class imbalance. With less than 0.5% positive cases, a naïve classifier predicting “no conflict” for all observations would achieve over 99% accuracy. Therefore, accuracy is not an informative metric in this context. The discrepancy between cross-validation performance and time-split test performance, particularly for the random forest model, suggests potential overfitting when models are evaluated on randomly partitioned folds. Time-based splitting provides a more realistic out-of-sample test because it mimics real-world forecasting conditions. Furthermore, the relatively modest AUC values are not supposed to be interpreted as model failure. In rare event political conflict prediction, even moderate discrimination can represent meaningful improvement over baseline guessing. The difficulty reflects both stochastic elements of international politics and the limited observability of strategic decision-making processes.
+
+Another limitation concerns model interpretability. While machine learning models such as random forests and boosting often improve predictive accuracy, they are typically less transparent than traditional regression models. This trade-off between predictive performance and interpretability remains an ongoing challenge in applying machine learning methods to political science research.
+
+## Conclusion
+
+Several substantive findings emerge from the analysis. First, relative economic and demographic indicators appear among the most important predictors in the model. Variables such as GDP ratio, population ratio, and territorial area ratio capture asymmetries in national capabilities and may reflect underlying power dynamics within dyads. These results suggest that structural differences between states contain meaningful information about the likelihood of conflict escalation.
+
+Second, the relatively modest predictive contribution of joint democracy provides an interesting contrast with the democratic peace literature. While democratic peace theory argues that democratic dyads rarely engage in militarized disputes, the results here suggest that regime type alone contributes relatively little to predictive performance once other structural variables are considered. This finding is consistent with recent work suggesting that some well-known theoretical relationships may have stronger explanatory than predictive power.
+
+This project set out to evaluate whether structural and political covariates commonly emphasized in the conflict literature meaningfully improve predictive performance of MID onset. Overall, the results suggest three substantive conclusions. First, capability ratio and trade consistently emerge as influential predictors across machine learning and penalized models. This indicates that material structure and economic interdependence contain predictive signal beyond regime type alone. Second, although joint democracy aligns with the democratic peace expectation descriptively, its predictive contribution appears modest in multivariate and machine learning settings. This suggests that democratic peace may be more strongly associated with explanation than pure prediction. Third, the limited overall predictive power of all models reinforces a broader insight: interstate conflict onset is inherently difficult to forecast. Structural covariates provide partial signal, but substantial uncertainty remains. To summarize, my findings suggest that while machine learning methods can improve model flexibility, they do not dramatically outperform simpler logistic regression models in this context. The constraint may lie less in model choice and more in the underlying predictability of rare interstate conflict events.
+
+Returning to the central research question whether machine learning models improve prediction of MID onset, the results suggest only modest gains relative to traditional logistic regression. Although flexible algorithms such as random forests and gradient boosting capture nonlinear relationships, their overall predictive performance remains limited by the inherent unpredictability of rare interstate conflict events. This finding suggests that improvements in prediction may depend less on algorithmic sophistication and more on incorporating richer behavioral or strategic variables.
+
+
+
+## References
+
+::: {#refs}
+:::
