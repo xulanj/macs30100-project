@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Xulan Jiang, xulanj@uchicago.edu">
+<meta name="dcterms.date" content="2026-03-12">
+
+<title>Predicting MID Onset: A Comprehensive Machine Learning Approach</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="26-03-12_files/libs/clipboard/clipboard.min.js"></script>
+<script src="26-03-12_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="26-03-12_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="26-03-12_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="26-03-12_files/libs/quarto-html/popper.min.js"></script>
+<script src="26-03-12_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="26-03-12_files/libs/quarto-html/anchor.min.js"></script>
+<link href="26-03-12_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="26-03-12_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="26-03-12_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="26-03-12_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="26-03-12_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Predicting MID Onset: A Comprehensive Machine Learning Approach</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Xulan Jiang, xulanj@uchicago.edu </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 12, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Note: This report is written in Quarto (.qmd). I encountered technical issues rendering the document to PDF via LaTeX, so I am submitting the HTML version, which renders all figures, tables, and outputs correctly.</p>
+<section id="supplementary-materials" class="level2">
+<h2 class="anchored" data-anchor-id="supplementary-materials">Supplementary Materials</h2>
+<p>All the codes and data pertinent to this project are available on GitHub repository: https://github.com/xulanj/macs30100-project.</p>
+</section>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(countrycode)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(factoextra)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'factoextra' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: ggplot2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'ggplot2' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Welcome! Want to learn more? See two factoextra-related books at https://goo.gl/ve3WBa</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggcorrplot)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'ggcorrplot' was built under R version 4.4.3</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggrepel)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'ggrepel' was built under R version 4.4.2</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(glmnet)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: Matrix</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loaded glmnet 4.1-8</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(haven)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(parsnip)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'parsnip' was built under R version 4.4.3</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pdp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'pdp' was built under R version 4.4.3</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ranger)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'ranger' was built under R version 4.4.3</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tidymodels' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching packages ────────────────────────────────────── tidymodels 1.4.1 ──</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>✔ broom        1.0.11     ✔ tailor       0.1.0 
+✔ dials        1.4.2      ✔ tidyr        1.3.1 
+✔ infer        1.1.0      ✔ tune         2.0.1 
+✔ modeldata    1.5.1      ✔ workflows    1.3.0 
+✔ purrr        1.2.1      ✔ workflowsets 1.1.1 
+✔ recipes      1.3.1      ✔ yardstick    1.3.2 
+✔ rsample      1.3.1      </code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'broom' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'dials' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'scales' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'infer' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'modeldata' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'purrr' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'recipes' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'rsample' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tailor' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tune' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'workflows' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'workflowsets' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'yardstick' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Conflicts ───────────────────────────────────────── tidymodels_conflicts() ──
+✖ purrr::discard()  masks scales::discard()
+✖ tidyr::expand()   masks Matrix::expand()
+✖ dplyr::filter()   masks stats::filter()
+✖ dplyr::lag()      masks stats::lag()
+✖ tidyr::pack()     masks Matrix::pack()
+✖ purrr::partial()  masks pdp::partial()
+✖ recipes::step()   masks stats::step()
+✖ tidyr::unpack()   masks Matrix::unpack()
+✖ recipes::update() masks Matrix::update(), stats::update()</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vip)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'vip' was built under R version 4.4.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'vip'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:utils':
+
+    vi</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(WDI)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Militarized interstate disputes (MIDs) are a central subject in the study of international conflict. MID refers to situations in which one state threatens, displays, or uses military force against another state short of full-scale war. Compared with interstate wars, which are typically defined by the threshold of at least 25 battlefield deaths, MIDs represent lower-intensity but far more frequent forms of interstate confrontation. Studying MID onset therefore provides a useful opportunity to examine the dynamics of conflict escalation and to evaluate whether observable structural factors can help predict when disputes are likely to occur. Improving the predictive understanding of such events is important not only for theoretical debates in international relations but also for identifying conditions under which interstate tensions are most likely to escalate.</p>
+<p>This project asks to what extent structural variables commonly used in the international conflict literature provide meaningful predictive signal for MID onset, and whether machine learning models meaningfully improve predictive performance relative to traditional statistical approaches such as logistic regression. Rather than asking simply whether machine learning can predict conflict, the goal is to examine whether flexible machine learning algorithms capture additional predictive structure in dyadic conflict data beyond the relationships typically modeled in conventional regression frameworks. Using dyad–year data from 1946 to 2014, I evaluate the predictive performance of several models, including logistic regression, LASSO-regularized logistic regression, random forests, support vector machines, and gradient boosting. The models are trained using a set of covariates commonly studied in the international conflict literature, including contiguity, joint democracy, alliances, relative capabilities, trade dependence, and economic indicators. Based on existing theoretical expectations, I hypothesize that dyads that are geographically contiguous, exhibit greater capability parity, and have weaker democratic institutions are more likely to experience MID onset. At the same time, recent work in conflict forecasting suggests that machine learning methods may capture nonlinear relationships and complex interactions among predictors that traditional statistical models often miss <span class="citation" data-cites="muchlinski2016comparing">Cranmer and Desmarais (<a href="#ref-cranmer2017can" role="doc-biblioref">2017</a>)</span>. These models therefore offer a promising approach for improving predictive performance in rare-event conflict settings. Improving predictive models of MID onset also has broader implications for early warning systems and conflict prevention efforts, as better forecasts can help policymakers identify conditions under which interstate tensions are more likely to escalate.</p>
+<p>A growing literature in political science has examined the use of machine learning for conflict prediction. Early work in the conflict forecasting tradition relied primarily on logistic regression and related statistical models to estimate the probability of conflict onset using structural covariates such as power ratios, geographic proximity, and regime type. More recent studies suggest that machine learning algorithms may improve predictive performance by capturing nonlinear interactions and complex relationships among predictors. For example, <span class="citation" data-cites="muchlinski2016comparing">(<a href="#ref-muchlinski2016comparing" role="doc-biblioref">Muchlinski et al. 2016</a>)</span> demonstrate that random forest models substantially outperform logistic regression in predicting civil war onset, while <span class="citation" data-cites="cranmer2017can">(<a href="#ref-cranmer2017can" role="doc-biblioref">Cranmer and Desmarais 2017</a>)</span> highlight the broader potential of machine learning approaches for political forecasting. At the same time, several scholars caution that predictive gains may depend heavily on the availability of informative covariates rather than the choice of algorithm itself. This project therefore contributes to the literature by comparing several machine learning approaches with traditional logistic regression using commonly employed structural predictors of interstate conflict.</p>
+</section>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>The unit of analysis is dyad-year, ranging from 1946 to 2014. The dependent variable is a binary measure of MID onset for dyad <span class="math inline">\(ij\)</span> in year <span class="math inline">\(t\)</span>. I use the Dyadic MID Data (v4.0) from the Correlates of War (COW) project <span class="citation" data-cites="palmer2015mid4">(<a href="#ref-palmer2015mid4" role="doc-biblioref">Palmer et al. 2015</a>)</span>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># dyadic MID data</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>mid <span class="ot">&lt;-</span> <span class="fu">read_dta</span>(<span class="st">"D:/MACS_30100/MLproject/dyadic_mid_4.03.dta"</span>)</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="co"># complementary data mapping all possible country dyads</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>dyad <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"D:/MACS_30100/MLproject/dyads.csv"</span>)</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a><span class="co"># expand dyadic pairs to cover the entire analysis period</span></span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>dyad <span class="ot">&lt;-</span> dyad[dyad<span class="sc">$</span>year <span class="sc">&gt;=</span> <span class="dv">1946</span>, ]</span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>dyad_pairs <span class="ot">&lt;-</span> <span class="fu">unique</span>(dyad[, <span class="fu">c</span>(<span class="st">"ccode1"</span>, <span class="st">"ccode2"</span>)])</span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>extension <span class="ot">&lt;-</span> <span class="dv">2009</span><span class="sc">:</span><span class="dv">2014</span></span>
+<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>dyad_extend <span class="ot">&lt;-</span> <span class="fu">merge</span>(dyad_pairs, <span class="fu">data.frame</span>(<span class="at">year =</span> extension))</span>
+<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a>dyad_all <span class="ot">&lt;-</span> <span class="fu">rbind</span>(dyad, dyad_extend)</span>
+<span id="cb46-12"><a href="#cb46-12" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> dyad_all</span>
+<span id="cb46-13"><a href="#cb46-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-14"><a href="#cb46-14" aria-hidden="true" tabindex="-1"></a><span class="co"># framework of analysis data</span></span>
+<span id="cb46-15"><a href="#cb46-15" aria-hidden="true" tabindex="-1"></a>mid <span class="ot">&lt;-</span> mid <span class="sc">%&gt;%</span> <span class="fu">rename</span>(<span class="at">ccode1 =</span> statea, <span class="at">ccode2 =</span> stateb)</span>
+<span id="cb46-16"><a href="#cb46-16" aria-hidden="true" tabindex="-1"></a>mid <span class="ot">&lt;-</span> mid[mid<span class="sc">$</span>year <span class="sc">&gt;=</span> <span class="dv">1946</span>, ]</span>
+<span id="cb46-17"><a href="#cb46-17" aria-hidden="true" tabindex="-1"></a>mid<span class="sc">$</span>mid <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb46-18"><a href="#cb46-18" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb46-19"><a href="#cb46-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(mid <span class="sc">%&gt;%</span> </span>
+<span id="cb46-20"><a href="#cb46-20" aria-hidden="true" tabindex="-1"></a>              <span class="fu">select</span>(year, ccode1, ccode2, mid), </span>
+<span id="cb46-21"><a href="#cb46-21" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode1"</span>, <span class="st">"ccode2"</span>))</span>
+<span id="cb46-22"><a href="#cb46-22" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>mid[<span class="fu">is.na</span>(df<span class="sc">$</span>mid)] <span class="ot">&lt;-</span> <span class="dv">0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>I also include several covariates. First, I include contiguity information <span class="citation" data-cites="stinnett2002correlates">(<a href="#ref-stinnett2002correlates" role="doc-biblioref">Stinnett et al. 2002</a>)</span> from COW’s Direct Contiguity Data (v3.2). With the distance between two states increasing, the potential of the initiation of a MID event is likely to decline as conflict with more distant states is more costly and states further apart have fewer issues to dispute.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">read_dta</span>(<span class="st">"D:/MACS_30100/MLproject/contdird.dta"</span>)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> con[con<span class="sc">$</span>year <span class="sc">&gt;=</span> <span class="dv">1946</span> <span class="sc">&amp;</span> con<span class="sc">$</span>year <span class="sc">&lt;=</span> <span class="dv">2014</span>, ]</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> con <span class="sc">%&gt;%</span> </span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">ccode1 =</span> state1no, <span class="at">ccode2 =</span> state2no)</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(con <span class="sc">%&gt;%</span> <span class="fu">select</span>(year, ccode1, ccode2, conttype), </span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode1"</span>, <span class="st">"ccode2"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in left_join(., con %&gt;% select(year, ccode1, ccode2, conttype), : Detected an unexpected many-to-many relationship between `x` and `y`.
+ℹ Row 4048 of `x` matches multiple rows in `y`.
+ℹ Row 49887 of `y` matches multiple rows in `x`.
+ℹ If a many-to-many relationship is expected, set `relationship =
+  "many-to-many"` to silence this warning.</code></pre>
+</div>
+</div>
+<p>Second, I include a measure of joint democracy given that numerous studies posit and demonstrate that two democracies are less likely to enter into a dispute than other dyads <span class="citation" data-cites="levy1988domestic">Imai and Lo (<a href="#ref-imai2021robustness" role="doc-biblioref">2021</a>)</span>. To measure joint democracy, I use a dichotomous variable that codes whether both states receive a score of 6 or higher on the Polity2 variable from the PolityIV data set <span class="citation" data-cites="marshall2002polity">(<a href="#ref-marshall2002polity" role="doc-biblioref">Marshall, Jaggers, and Gurr 2002</a>)</span>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>polity <span class="ot">&lt;-</span> <span class="fu">read_xls</span>(<span class="st">"D:/MACS_30100/MLproject/p5v2018.xls"</span>)</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>polity <span class="ot">&lt;-</span> polity[polity<span class="sc">$</span>year <span class="sc">&gt;=</span> <span class="dv">1946</span> <span class="sc">&amp;</span> polity<span class="sc">$</span>year <span class="sc">&lt;=</span> <span class="dv">2014</span>, ]</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(polity <span class="sc">%&gt;%</span> <span class="fu">select</span>(ccode, year, polity2), </span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode1"</span> <span class="ot">=</span> <span class="st">"ccode"</span>))</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">rename</span>(<span class="at">polity2a =</span> polity2)</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(polity <span class="sc">%&gt;%</span> <span class="fu">select</span>(ccode, year, polity2), </span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode2"</span> <span class="ot">=</span> <span class="st">"ccode"</span>))</span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">rename</span>(<span class="at">polity2b =</span> polity2)</span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>joint_dem <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(df<span class="sc">$</span>polity2a <span class="sc">&gt;=</span> <span class="dv">6</span> <span class="sc">&amp;</span> df<span class="sc">$</span>polity2b <span class="sc">&gt;=</span><span class="dv">6</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Third, I include a binary alliance variable from COW’s Formal Alliances Data (v4.1) <span class="citation" data-cites="gibler2008international">(<a href="#ref-gibler2008international" role="doc-biblioref">Gibler 2008</a>)</span> because challengers who expect support from outside states may believe they are more likely to succeed in accomplishing their goals through the threat or use of force and will be more likely to initiate a dispute.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>alliance <span class="ot">&lt;-</span> <span class="fu">read_dta</span>(<span class="st">"D:/MACS_30100/MLproject/alliance_v4.1_by_dyad_yearly.dta"</span>)</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>alliance <span class="ot">&lt;-</span> alliance[alliance<span class="sc">$</span>year <span class="sc">&gt;=</span> <span class="dv">1946</span>, ]</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>alliance<span class="sc">$</span>ally <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(alliance <span class="sc">%&gt;%</span> <span class="fu">select</span>(year, ccode1, ccode2, ally), </span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode1"</span>, <span class="st">"ccode2"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in left_join(., alliance %&gt;% select(year, ccode1, ccode2, ally), : Detected an unexpected many-to-many relationship between `x` and `y`.
+ℹ Row 715 of `x` matches multiple rows in `y`.
+ℹ Row 29296 of `y` matches multiple rows in `x`.
+ℹ If a many-to-many relationship is expected, set `relationship =
+  "many-to-many"` to silence this warning.</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>ally[df<span class="sc">$</span>year <span class="sc">&lt;=</span> <span class="dv">2012</span> <span class="sc">&amp;</span> <span class="fu">is.na</span>(df<span class="sc">$</span>ally)] <span class="ot">&lt;-</span> <span class="dv">0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Fourth, I include a variable that codes the potential challenger’s likelihood of defeating the potential target in a conflict <span class="citation" data-cites="johnson2011defense">(<a href="#ref-johnson2011defense" role="doc-biblioref">Johnson and Leeds 2011</a>)</span>. To operationalize this variable, I use the ratio of the first state’s military capabilities to the sum of the second state’s military capabilities in a dyad, data from COW’s National Material Capabilities Data (v6.0) <span class="citation" data-cites="singer2012capability">(<a href="#ref-singer2012capability" role="doc-biblioref">Singer, Bremer, and Stuckey 2012</a>)</span>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>nmc <span class="ot">&lt;-</span> <span class="fu">read_dta</span>(<span class="st">"D:/MACS_30100/MLproject/NMC-60-abridged.dta"</span>)</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>nmc <span class="ot">&lt;-</span> nmc[nmc<span class="sc">$</span>year <span class="sc">&gt;=</span> <span class="dv">1946</span> <span class="sc">&amp;</span> nmc<span class="sc">$</span>year <span class="sc">&lt;=</span> <span class="dv">2014</span>, ]</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(nmc <span class="sc">%&gt;%</span> <span class="fu">select</span>(ccode, year, cinc), </span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode1"</span> <span class="ot">=</span> <span class="st">"ccode"</span>))</span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">rename</span>(<span class="at">cinc1 =</span> cinc)</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(nmc <span class="sc">%&gt;%</span> <span class="fu">select</span>(ccode, year, cinc), </span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode2"</span> <span class="ot">=</span> <span class="st">"ccode"</span>))</span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">rename</span>(<span class="at">cinc2 =</span> cinc)</span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>nmc_ratio <span class="ot">&lt;-</span> <span class="fu">pmin</span>(df<span class="sc">$</span>cinc1, df<span class="sc">$</span>cinc2) <span class="sc">/</span> <span class="fu">pmax</span>(df<span class="sc">$</span>cinc1, df<span class="sc">$</span>cinc2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Fifth, I include information about the amount of smooth trade in a dyad as well as a trade spike dummy and a trade decline dummy from COW’s Trade Data (v4.0) <span class="citation" data-cites="barbieri2016correlates">(<a href="#ref-barbieri2016correlates" role="doc-biblioref">Barbieri and Keshk 2016</a>)</span>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>trade <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"D:/MACS_30100/MLproject/Dyadic_COW_4.0.csv"</span>)</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">left_join</span>(trade <span class="sc">%&gt;%</span> </span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">smoothtotrade =</span> <span class="fu">ifelse</span>(smoothtotrade <span class="sc">&lt;</span> <span class="dv">0</span>, <span class="cn">NA</span>, smoothtotrade)) <span class="sc">%&gt;%</span></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(year, ccode1, ccode2, smoothtotrade, trdspike, tradedip), </span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode1"</span>, <span class="st">"ccode2"</span>))</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>logtrade <span class="ot">&lt;-</span> <span class="fu">log</span>(df<span class="sc">$</span>smoothtotrade <span class="sc">+</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Finally, I complement the dataset with additional economic indicators drawn from World Bank’s World Development Indicators (WDI), including GDP, GDP per capita, population, territorial area, and foreign direct investment (FDI), which capture key dimensions of economic capacity and development.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>wdi <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">WDI</span>(<span class="at">country =</span> <span class="st">"all"</span>, </span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">indicator =</span> <span class="fu">c</span>(<span class="st">"gdp"</span> <span class="ot">=</span> <span class="st">"NY.GDP.MKTP.KD"</span>, </span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"gdppp"</span> <span class="ot">=</span> <span class="st">"NY.GDP.PCAP.KD"</span>, </span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"pop"</span> <span class="ot">=</span> <span class="st">"SP.POP.TOTL"</span>, </span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"area"</span> <span class="ot">=</span> <span class="st">"AG.LND.TOTL.K2"</span>,</span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>                                       <span class="st">"fdi"</span> <span class="ot">=</span> <span class="st">"BX.KLT.DINV.CD.WD"</span>),</span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>                         <span class="at">start =</span> <span class="dv">1960</span>, <span class="at">end =</span> <span class="dv">2014</span>))</span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a>wdi<span class="sc">$</span>ccode <span class="ot">&lt;-</span> <span class="fu">countrycode</span>(wdi<span class="sc">$</span>iso3c, <span class="at">origin =</span> <span class="st">"iso3c"</span>, <span class="at">destination =</span> <span class="st">"cown"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Some values were not matched unambiguously: , ABW, AFE, AFW, ARB, ASM, BMU, CEB, CHI, CSS, CUW, CYM, EAP, EAR, EAS, ECA, ECS, EMU, EUU, FCS, FRO, GIB, GRL, GUM, HKG, HPC, IBD, IBT, IDA, IDB, IDX, IMN, LAC, LCN, LDC, LMY, LTE, MAC, MAF, MEA, MIC, MNA, MNP, NAC, NCL, OED, OSS, PRE, PRI, PSE, PSS, PST, PYF, SAS, SRB, SSA, SSF, SST, SXM, TCA, TEA, TEC, TLA, TMN, TSA, TSS, VGB, VIR, WLD, XKX</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(wdi <span class="sc">%&gt;%</span> <span class="fu">select</span>(ccode, year, gdp, gdppp, pop, area, fdi),</span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode1"</span> <span class="ot">=</span> <span class="st">"ccode"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">gdp1 =</span> gdp, <span class="at">gdppp1 =</span> gdppp, <span class="at">pop1 =</span> pop, <span class="at">area1 =</span> area, <span class="at">fdi1 =</span> fdi)</span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(wdi <span class="sc">%&gt;%</span> <span class="fu">select</span>(ccode, year, gdp, gdppp, pop, area, fdi),</span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"year"</span>, <span class="st">"ccode2"</span> <span class="ot">=</span> <span class="st">"ccode"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">gdp2 =</span> gdp, <span class="at">gdppp2 =</span> gdppp, <span class="at">pop2 =</span> pop, <span class="at">area2 =</span> area, <span class="at">fdi2 =</span> fdi)</span>
+<span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>gdp_ratio <span class="ot">&lt;-</span> <span class="fu">log</span>(df<span class="sc">$</span>gdp1 <span class="sc">/</span> df<span class="sc">$</span>gdp2)</span>
+<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>gdppp_ratio <span class="ot">&lt;-</span> <span class="fu">log</span>(df<span class="sc">$</span>gdppp1 <span class="sc">/</span> df<span class="sc">$</span>gdppp2)</span>
+<span id="cb57-12"><a href="#cb57-12" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>pop_ratio <span class="ot">&lt;-</span> <span class="fu">log</span>(df<span class="sc">$</span>pop1 <span class="sc">/</span> df<span class="sc">$</span>pop2)</span>
+<span id="cb57-13"><a href="#cb57-13" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>area_ratio <span class="ot">&lt;-</span> <span class="fu">log</span>(df<span class="sc">$</span>area1 <span class="sc">/</span> df<span class="sc">$</span>area2)</span>
+<span id="cb57-14"><a href="#cb57-14" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>fdi_ratio <span class="ot">&lt;-</span> <span class="fu">log</span>((df<span class="sc">$</span>fdi1<span class="sc">+</span><span class="dv">1</span>) <span class="sc">/</span> (df<span class="sc">$</span>fdi2<span class="sc">+</span><span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in log((df$fdi1 + 1)/(df$fdi2 + 1)): NaNs produced</code></pre>
+</div>
+</div>
+<p>Now the data for further analysis is prepared. Prior to EDA, several limitations of the data should be acknowledged. First, MID onset is an extremely rare event, accounting for less than 0.5% of all dyad-year observations, which creates a severe class imbalance problem for prediction models. Second, many variables in cross-national datasets contain measurement error or missing values, particularly economic indicators in earlier decades. Finally, dyadic conflict datasets may suffer from reporting bias, as minor disputes are more likely to be recorded among major powers than among smaller states.</p>
+</section>
+<section id="eda" class="level2">
+<h2 class="anchored" data-anchor-id="eda">EDA</h2>
+<p>In this section, I present a comprehensive illustration of exploratory data analysis (EDA). I employ both standard EDA techniques and unsupervised principal component analysis (PCA). The entire dataset is used to provide a holistic overview of the data during this exploratory stage. Since PCA is applied purely for descriptive purposes and is not used in model training or manipulation of the test data, concerns about data leakage do not arise.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     ccode1          ccode2           year           mid          
+ Min.   :  2.0   Min.   : 20.0   Min.   :1946   Min.   :0.000000  
+ 1st Qu.:101.0   1st Qu.:450.0   1st Qu.:1977   1st Qu.:0.000000  
+ Median :316.0   Median :640.0   Median :1993   Median :0.000000  
+ Mean   :310.4   Mean   :604.4   Mean   :1990   Mean   :0.004557  
+ 3rd Qu.:451.0   3rd Qu.:770.0   3rd Qu.:2004   3rd Qu.:0.000000  
+ Max.   :987.0   Max.   :990.0   Max.   :2014   Max.   :1.000000  
+                                                                  
+    conttype         polity2a         polity2b        joint_dem     
+ Min.   :1.0      Min.   :-10.00   Min.   :-10.00   Min.   :0.00    
+ 1st Qu.:1.0      1st Qu.: -6.00   1st Qu.: -7.00   1st Qu.:0.00    
+ Median :1.0      Median :  5.00   Median : -2.00   Median :0.00    
+ Mean   :2.4      Mean   :  2.28   Mean   : -0.28   Mean   :0.15    
+ 3rd Qu.:4.0      3rd Qu.:  9.00   3rd Qu.:  7.00   3rd Qu.:0.00    
+ Max.   :5.0      Max.   : 10.00   Max.   : 10.00   Max.   :1.00    
+ NA's   :784131   NA's   :111553   NA's   :106042   NA's   :101263  
+      ally           cinc1            cinc2         nmc_ratio    
+ Min.   :0.00    Min.   :0.0000   Min.   :0.000   Min.   :0.000  
+ 1st Qu.:0.00    1st Qu.:0.0003   1st Qu.:0.000   1st Qu.:0.025  
+ Median :0.00    Median :0.0008   Median :0.001   Median :0.125  
+ Mean   :0.09    Mean   :0.0067   Mean   :0.006   Mean   :0.240  
+ 3rd Qu.:0.00    3rd Qu.:0.0037   3rd Qu.:0.004   3rd Qu.:0.386  
+ Max.   :1.00    Max.   :0.3640   Max.   :0.229   Max.   :1.000  
+ NA's   :39648   NA's   :3018     NA's   :3678    NA's   :6576   
+ smoothtotrade         trdspike        tradedip        logtrade     
+ Min.   :     0.0   Min.   :0.000   Min.   :0.000   Min.   : 0.00   
+ 1st Qu.:     0.0   1st Qu.:0.000   1st Qu.:0.000   1st Qu.: 0.00   
+ Median :     1.0   Median :0.000   Median :0.000   Median : 0.71   
+ Mean   :   497.3   Mean   :0.035   Mean   :0.031   Mean   : 1.84   
+ 3rd Qu.:    22.3   3rd Qu.:0.000   3rd Qu.:0.000   3rd Qu.: 3.15   
+ Max.   :655808.2   Max.   :1.000   Max.   :1.000   Max.   :13.39   
+ NA's   :210588     NA's   :6578    NA's   :6578    NA's   :210588  
+      gdp1               gdppp1              pop1               area1         
+ Min.   :2.848e+07   Min.   :   122.7   Min.   :9.544e+03   Min.   :       2  
+ 1st Qu.:4.839e+09   1st Qu.:  1601.5   1st Qu.:1.912e+06   1st Qu.:   28050  
+ Median :1.820e+10   Median :  4705.9   Median :6.029e+06   Median :  120340  
+ Mean   :3.097e+11   Mean   : 11876.4   Mean   :2.283e+07   Mean   :  756235  
+ 3rd Qu.:1.205e+11   3rd Qu.: 14733.7   3rd Qu.:1.635e+07   3rd Qu.:  538950  
+ Max.   :1.769e+13   Max.   :165288.2   Max.   :1.372e+09   Max.   :16389950  
+ NA's   :102882      NA's   :102882     NA's   :68383       NA's   :92311     
+      fdi1                 gdp2               gdppp2        
+ Min.   :-2.968e+10   Min.   :2.848e+07   Min.   :   122.7  
+ 1st Qu.: 1.700e+07   1st Qu.:3.769e+09   1st Qu.:   931.9  
+ Median : 1.528e+08   Median :1.634e+10   Median :  2408.1  
+ Mean   : 6.353e+09   Mean   :1.644e+11   Mean   :  9040.3  
+ 3rd Qu.: 1.443e+09   3rd Qu.:9.542e+10   3rd Qu.:  8627.4  
+ Max.   : 7.338e+11   Max.   :1.054e+13   Max.   :165288.2  
+ NA's   :183754       NA's   :120555      NA's   :120555    
+      pop2               area2               fdi2              gdp_ratio     
+ Min.   :9.544e+03   Min.   :       2   Min.   :-2.968e+10   Min.   :-10.63  
+ 1st Qu.:1.915e+06   1st Qu.:   28120   1st Qu.: 6.630e+06   1st Qu.: -1.98  
+ Median :6.930e+06   Median :  227540   Median : 9.500e+07   Median :  0.19  
+ Mean   :3.965e+07   Mean   :  669251   Mean   : 2.909e+09   Mean   :  0.29  
+ 3rd Qu.:2.311e+07   3rd Qu.:  622980   3rd Qu.: 8.786e+08   3rd Qu.:  2.44  
+ Max.   :1.372e+09   Max.   :16389950   Max.   : 7.338e+11   Max.   : 13.21  
+ NA's   :72241       NA's   :92410      NA's   :188391       NA's   :169309  
+  gdppp_ratio       pop_ratio        area_ratio       fdi_ratio     
+ Min.   :-6.34    Min.   :-10.78   Min.   :-15.91   Min.   :-23.1   
+ 1st Qu.:-0.94    1st Qu.: -2.02   1st Qu.: -2.32   1st Qu.: -1.9   
+ Median : 0.48    Median : -0.20   Median : -0.28   Median :  0.5   
+ Mean   : 0.47    Mean   : -0.19   Mean   : -0.20   Mean   :  0.6   
+ 3rd Qu.: 1.94    3rd Qu.:  1.63   3rd Qu.:  1.89   3rd Qu.:  3.1   
+ Max.   : 6.66    Max.   : 11.80   Max.   : 15.32   Max.   : 25.1   
+ NA's   :169309   NA's   :94917    NA's   :131311   NA's   :327115  </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(df<span class="sc">$</span>mid)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+     0      1 
+813451   3724 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(df<span class="sc">$</span>conttype)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    1     2     3     4     5 
+19397   892   937  4371  7447 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(df<span class="sc">$</span>joint_dem)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+     0      1 
+605633 110279 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(df<span class="sc">$</span>ally)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+     0      1 
+711174  66353 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(df<span class="sc">$</span>nmc_ratio)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/eda-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(df<span class="sc">$</span>logtrade)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/eda-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(mid) <span class="sc">%&gt;%</span></span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">joint_dem =</span> <span class="fu">mean</span>(joint_dem, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">ally =</span> <span class="fu">mean</span>(ally, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb71-4"><a href="#cb71-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">nmc_ratio =</span> <span class="fu">mean</span>(nmc_ratio, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb71-5"><a href="#cb71-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">trade =</span> <span class="fu">mean</span>(logtrade, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 5
+    mid joint_dem   ally nmc_ratio trade
+  &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;
+1     0    0.154  0.0842     0.239  1.84
+2     1    0.0811 0.320      0.329  3.57</code></pre>
+</div>
+</div>
+<p>The distribution highlights the extreme rarity of MID onset, with fewer than 1% of observations corresponding to conflict events. Most dyads are non-contiguous and non-allied, and only about 15% are joint democracies. MID onsets are less common among joint democracies but substantially more common among allied dyads. MID dyads also tend to exhibit greater capability parity and significantly higher logged trade levels on average. In addition, given the disproportionate amount of missing values, I filter them out in the later modeling stage.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(mid)) <span class="sc">+</span></span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">fill =</span> <span class="st">"#F0E442"</span>) <span class="sc">+</span></span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">stat =</span> <span class="st">'count'</span>, </span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">after_stat</span>(count)), </span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.5</span>,    </span>
+<span id="cb73-6"><a href="#cb73-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb73-7"><a href="#cb73-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Distribution of MID Onset"</span>,</span>
+<span id="cb73-8"><a href="#cb73-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"MID Onset"</span>,</span>
+<span id="cb73-9"><a href="#cb73-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Count"</span>) <span class="sc">+</span></span>
+<span id="cb73-10"><a href="#cb73-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/rare-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>I make some visualizations for intuitive presentations. First, I plot the frequency of MID events throughout the covered period. While the frequency fluctuates significantly over the decades, there is a prominent peak after the termination of Cold War in the late 1990s. Following this spike, the number of incidents generally declined before showing a moderate increase again in the early 2010s.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>mid_by_year <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span> <span class="fu">summarise</span>(<span class="at">mid_count =</span> <span class="fu">sum</span>(mid, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mid_by_year, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> mid_count)) <span class="sc">+</span></span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_area</span>(<span class="at">fill =</span> <span class="st">"#E69F00"</span>, <span class="at">alpha =</span> <span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"#F0E442"</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> <span class="st">"#D55E00"</span>, <span class="at">size =</span> <span class="fl">1.5</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">1940</span>, <span class="dv">2020</span>, <span class="at">by =</span> <span class="dv">10</span>),</span>
+<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a>                     <span class="at">minor_breaks =</span> <span class="fu">seq</span>(<span class="dv">1946</span>, <span class="dv">2014</span>, <span class="at">by =</span> <span class="dv">1</span>),</span>
+<span id="cb74-9"><a href="#cb74-9" aria-hidden="true" tabindex="-1"></a>                     <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">1946</span>, <span class="dv">2014</span>),</span>
+<span id="cb74-10"><a href="#cb74-10" aria-hidden="true" tabindex="-1"></a>                     <span class="at">expand =</span> <span class="fu">c</span>(<span class="fl">0.02</span>, <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb74-11"><a href="#cb74-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
+<span id="cb74-12"><a href="#cb74-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Events of MID by year"</span>,</span>
+<span id="cb74-13"><a href="#cb74-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"MID count"</span>,) <span class="sc">+</span></span>
+<span id="cb74-14"><a href="#cb74-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>),</span>
+<span id="cb74-15"><a href="#cb74-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">panel.grid.minor =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb74-16"><a href="#cb74-16" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.line =</span> <span class="fu">element_line</span>(<span class="at">color =</span> <span class="st">"black"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+ℹ Please use `linewidth` instead.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/plot1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Second, I show the the distribution of MID events by contiguity types. It clearly show that direct contiguity status via land border reports the most significant frequency of MID events throughout the period. Dyads with no recorded contiguity types (i.e., geographically distant pairs) consists of the second largest group of MID events, which is not surprising as they constitute the overwhelming majority of all dyad-year observations in the international system.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a>mid_by_con <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">distance_grp =</span> <span class="fu">case_when</span>(</span>
+<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>    conttype <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"1: Land Border"</span>,</span>
+<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>    conttype <span class="sc">==</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"2: 12mi Sea"</span>,</span>
+<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a>    conttype <span class="sc">==</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"3: 24mi Sea"</span>,</span>
+<span id="cb76-6"><a href="#cb76-6" aria-hidden="true" tabindex="-1"></a>    conttype <span class="sc">==</span> <span class="dv">4</span> <span class="sc">~</span> <span class="st">"4: 150mi Sea"</span>,</span>
+<span id="cb76-7"><a href="#cb76-7" aria-hidden="true" tabindex="-1"></a>    conttype <span class="sc">==</span> <span class="dv">5</span> <span class="sc">~</span> <span class="st">"5: 400mi Sea"</span>,</span>
+<span id="cb76-8"><a href="#cb76-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">is.na</span>(conttype) <span class="sc">~</span> <span class="st">"6: Non-Contiguous"</span>,</span>
+<span id="cb76-9"><a href="#cb76-9" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="fu">as.character</span>(conttype)</span>
+<span id="cb76-10"><a href="#cb76-10" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb76-11"><a href="#cb76-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, distance_grp) <span class="sc">%&gt;%</span></span>
+<span id="cb76-12"><a href="#cb76-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mid_count =</span> <span class="fu">sum</span>(mid, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb76-13"><a href="#cb76-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-14"><a href="#cb76-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mid_by_con, </span>
+<span id="cb76-15"><a href="#cb76-15" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> mid_count, <span class="at">color =</span> distance_grp, <span class="at">fill =</span> distance_grp)) <span class="sc">+</span></span>
+<span id="cb76-16"><a href="#cb76-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_area</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb76-17"><a href="#cb76-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb76-18"><a href="#cb76-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>distance_grp, <span class="at">scales =</span> <span class="st">"free_y"</span>, <span class="at">ncol =</span> <span class="dv">2</span>) <span class="sc">+</span> </span>
+<span id="cb76-19"><a href="#cb76-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">1940</span>, <span class="dv">2020</span>, <span class="at">by =</span> <span class="dv">10</span>)) <span class="sc">+</span></span>
+<span id="cb76-20"><a href="#cb76-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_viridis_d</span>(<span class="at">option =</span> <span class="st">"plasma"</span>) <span class="sc">+</span></span>
+<span id="cb76-21"><a href="#cb76-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>(<span class="at">option =</span> <span class="st">"plasma"</span>) <span class="sc">+</span></span>
+<span id="cb76-22"><a href="#cb76-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">12</span>) <span class="sc">+</span></span>
+<span id="cb76-23"><a href="#cb76-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Events of MID by contiguity types"</span>,</span>
+<span id="cb76-24"><a href="#cb76-24" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"MID count"</span>) <span class="sc">+</span></span>
+<span id="cb76-25"><a href="#cb76-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb76-26"><a href="#cb76-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">strip.background =</span> <span class="fu">element_rect</span>(<span class="at">fill =</span> <span class="st">"#999999"</span>, <span class="at">color =</span> <span class="cn">NA</span>),</span>
+<span id="cb76-27"><a href="#cb76-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">strip.text =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>),</span>
+<span id="cb76-28"><a href="#cb76-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.spacing =</span> <span class="fu">unit</span>(<span class="dv">1</span>, <span class="st">"lines"</span>),</span>
+<span id="cb76-29"><a href="#cb76-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"none"</span></span>
+<span id="cb76-30"><a href="#cb76-30" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/plot2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Third, I present the discrepancy of MID onset probability by joint democracy. MIDs are consistently more frequent among non-joint democracy dyads than those joint democratic counterparts, aligning with the well-known theoretical contention of democratic peace.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a>mid_by_dem <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(joint_dem)) <span class="sc">%&gt;%</span></span>
+<span id="cb77-3"><a href="#cb77-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Democracy =</span> <span class="fu">ifelse</span>(joint_dem <span class="sc">==</span> <span class="dv">1</span>, <span class="st">"Joint Democracy"</span>, <span class="st">"Non-Joint Democracy"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb77-4"><a href="#cb77-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, Democracy) <span class="sc">%&gt;%</span></span>
+<span id="cb77-5"><a href="#cb77-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mid_rate =</span> <span class="fu">mean</span>(mid, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb77-6"><a href="#cb77-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb77-7"><a href="#cb77-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mid_by_dem, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> mid_rate, </span>
+<span id="cb77-8"><a href="#cb77-8" aria-hidden="true" tabindex="-1"></a>                       <span class="at">color =</span> Democracy, <span class="at">fill =</span> Democracy)) <span class="sc">+</span></span>
+<span id="cb77-9"><a href="#cb77-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_area</span>(<span class="at">alpha =</span> <span class="fl">0.15</span>, <span class="at">position =</span> <span class="st">"identity"</span>) <span class="sc">+</span></span>
+<span id="cb77-10"><a href="#cb77-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">size =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb77-11"><a href="#cb77-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">1940</span>, <span class="dv">2020</span>, <span class="at">by =</span> <span class="dv">10</span>), </span>
+<span id="cb77-12"><a href="#cb77-12" aria-hidden="true" tabindex="-1"></a>                     <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">1946</span>, <span class="dv">2014</span>)) <span class="sc">+</span></span>
+<span id="cb77-13"><a href="#cb77-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Joint Democracy"</span> <span class="ot">=</span> <span class="st">"#0072B2"</span>, </span>
+<span id="cb77-14"><a href="#cb77-14" aria-hidden="true" tabindex="-1"></a>                                <span class="st">"Non-Joint Democracy"</span> <span class="ot">=</span> <span class="st">"#E69F00"</span>)) <span class="sc">+</span></span>
+<span id="cb77-15"><a href="#cb77-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"Joint Democracy"</span> <span class="ot">=</span> <span class="st">"#0072B2"</span>, </span>
+<span id="cb77-16"><a href="#cb77-16" aria-hidden="true" tabindex="-1"></a>                               <span class="st">"Non-Joint Democracy"</span> <span class="ot">=</span> <span class="st">"#E69F00"</span>)) <span class="sc">+</span></span>
+<span id="cb77-17"><a href="#cb77-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
+<span id="cb77-18"><a href="#cb77-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"MID by Joint Democracy"</span>,</span>
+<span id="cb77-19"><a href="#cb77-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"MID Frequency"</span>) <span class="sc">+</span></span>
+<span id="cb77-20"><a href="#cb77-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb77-21"><a href="#cb77-21" aria-hidden="true" tabindex="-1"></a>        <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">16</span>),</span>
+<span id="cb77-22"><a href="#cb77-22" aria-hidden="true" tabindex="-1"></a>        <span class="at">panel.grid.minor =</span> <span class="fu">element_blank</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/plot3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Next, I present the correlation matrix among variables. The correlation matrix indicates that pairwise correlations among predictors are generally modest, suggesting no severe multicollinearity concerns. MID onset is weakly correlated with most covariates, which is consistent with it being a rare event and influenced by multiple factors rather than any single dominant predictor.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>corr_matrix <span class="ot">&lt;-</span> <span class="fu">cor</span>(df <span class="sc">%&gt;%</span> </span>
+<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">select</span>(mid, conttype, joint_dem, ally, </span>
+<span id="cb78-3"><a href="#cb78-3" aria-hidden="true" tabindex="-1"></a>                            nmc_ratio, logtrade, trdspike, </span>
+<span id="cb78-4"><a href="#cb78-4" aria-hidden="true" tabindex="-1"></a>                            tradedip, gdp_ratio, gdppp_ratio, </span>
+<span id="cb78-5"><a href="#cb78-5" aria-hidden="true" tabindex="-1"></a>                            area_ratio, pop_ratio, fdi_ratio), </span>
+<span id="cb78-6"><a href="#cb78-6" aria-hidden="true" tabindex="-1"></a>                   <span class="at">use =</span> <span class="st">"complete.obs"</span>)</span>
+<span id="cb78-7"><a href="#cb78-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggcorrplot</span>(corr_matrix, </span>
+<span id="cb78-8"><a href="#cb78-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">hc.order =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb78-9"><a href="#cb78-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">type =</span> <span class="st">"lower"</span>,</span>
+<span id="cb78-10"><a href="#cb78-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">lab =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb78-11"><a href="#cb78-11" aria-hidden="true" tabindex="-1"></a>           <span class="at">lab_size =</span> <span class="dv">3</span>,</span>
+<span id="cb78-12"><a href="#cb78-12" aria-hidden="true" tabindex="-1"></a>           <span class="at">colors =</span> <span class="fu">c</span>(<span class="st">"#E15759"</span>, <span class="st">"white"</span>, <span class="st">"#56B4E9"</span>), </span>
+<span id="cb78-13"><a href="#cb78-13" aria-hidden="true" tabindex="-1"></a>           <span class="at">title =</span> <span class="st">"Correlation Matrix"</span>,</span>
+<span id="cb78-14"><a href="#cb78-14" aria-hidden="true" tabindex="-1"></a>           <span class="at">ggtheme =</span> <span class="fu">theme_minimal</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `aes_string()` was deprecated in ggplot2 3.0.0.
+ℹ Please use tidy evaluation idioms with `aes()`.
+ℹ See also `vignette("ggplot2-in-packages")` for more information.
+ℹ The deprecated feature was likely used in the ggcorrplot package.
+  Please report the issue at &lt;https://github.com/kassambara/ggcorrplot/issues&gt;.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/corr-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Moreover, I employ PCA to highlight informative features of the dataset for descriptive purposes. Since PCA is sensitive to the scale of variables and the variables in our dataset vary substantially in magnitude, I use the built-in parameter “scale = TRUE” in the function to standardize the variables prior to analysis. In addition, I exclude dummy variables from the PCA, as the method is designed to capture variance among continuous features. This ensures that the principal components reflect underlying patterns in the data rather than differences in measurement scale. The resulting components provide a compact summary of the correlation structure among the explanatory variables.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>df_pca <span class="ot">&lt;-</span> df[, <span class="dv">5</span><span class="sc">:</span><span class="fu">ncol</span>(df)]</span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>df_pca <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(df_pca)</span>
+<span id="cb80-3"><a href="#cb80-3" aria-hidden="true" tabindex="-1"></a>dummy <span class="ot">&lt;-</span> <span class="fu">sapply</span>(df_pca, <span class="cf">function</span>(x) <span class="fu">length</span>(<span class="fu">unique</span>(x)) <span class="sc">&lt;=</span> <span class="dv">2</span>)</span>
+<span id="cb80-4"><a href="#cb80-4" aria-hidden="true" tabindex="-1"></a>df_pca <span class="ot">&lt;-</span> df_pca[, <span class="sc">!</span>dummy]</span>
+<span id="cb80-5"><a href="#cb80-5" aria-hidden="true" tabindex="-1"></a>pca <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(df_pca, <span class="at">center =</span> <span class="cn">TRUE</span>, <span class="at">scale. =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb80-6"><a href="#cb80-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-7"><a href="#cb80-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(pca)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Importance of components:
+                          PC1    PC2    PC3     PC4     PC5     PC6     PC7
+Standard deviation     2.2447 2.0643 1.5805 1.29078 1.18895 1.12613 1.06263
+Proportion of Variance 0.2191 0.1853 0.1086 0.07244 0.06146 0.05514 0.04909
+Cumulative Proportion  0.2191 0.4043 0.5129 0.58538 0.64684 0.70198 0.75107
+                           PC8     PC9    PC10    PC11    PC12    PC13    PC14
+Standard deviation     0.92726 0.88155 0.83364 0.75538 0.69126 0.68755 0.64638
+Proportion of Variance 0.03738 0.03379 0.03022 0.02481 0.02078 0.02055 0.01817
+Cumulative Proportion  0.78846 0.82225 0.85246 0.87727 0.89805 0.91860 0.93676
+                          PC15    PC16    PC17    PC18    PC19    PC20    PC21
+Standard deviation     0.59527 0.54742 0.48751 0.45103 0.39633 0.38117 0.17244
+Proportion of Variance 0.01541 0.01303 0.01033 0.00884 0.00683 0.00632 0.00129
+Cumulative Proportion  0.95217 0.96520 0.97553 0.98438 0.99121 0.99752 0.99882
+                          PC22    PC23
+Standard deviation     0.16458 0.01069
+Proportion of Variance 0.00118 0.00000
+Cumulative Proportion  1.00000 1.00000</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a>pca<span class="sc">$</span>center  </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     conttype      polity2a      polity2b         cinc1         cinc2 
+ 2.197427e+00  1.835699e+00  7.836439e-01  1.338690e-02  6.025826e-03 
+    nmc_ratio smoothtotrade      logtrade          gdp1        gdppp1 
+ 3.273891e-01  7.553767e+03  5.240257e+00  5.453267e+11  1.103264e+04 
+         pop1         area1          fdi1          gdp2        gdppp2 
+ 8.010265e+07  1.646113e+06  1.092884e+10  2.604811e+11  1.251519e+04 
+         pop2         area2          fdi2     gdp_ratio   gdppp_ratio 
+ 3.712771e+07  9.130960e+05  5.031285e+09  3.004491e-01 -1.324954e-01 
+    pop_ratio    area_ratio     fdi_ratio 
+ 4.359714e-01  2.698885e-01  3.280017e-01 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a>pca<span class="sc">$</span>scale    </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     conttype      polity2a      polity2b         cinc1         cinc2 
+ 1.685747e+00  7.344327e+00  7.567444e+00  2.983418e-02  1.610668e-02 
+    nmc_ratio smoothtotrade      logtrade          gdp1        gdppp1 
+ 2.809402e-01  3.576867e+04  3.044590e+00  1.545151e+12  1.531446e+04 
+         pop1         area1          fdi1          gdp2        gdppp2 
+ 2.234586e+08  3.552307e+06  3.881103e+10  6.467425e+11  1.762184e+04 
+         pop2         area2          fdi2     gdp_ratio   gdppp_ratio 
+ 1.209604e+08  1.887871e+06  2.040292e+10  2.247133e+00  1.212537e+00 
+    pop_ratio    area_ratio     fdi_ratio 
+ 1.983751e+00  2.377147e+00  3.392529e+00 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>pca<span class="sc">$</span>rotation </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                      PC1          PC2           PC3          PC4          PC5
+conttype       0.02771896 -0.006162321 -0.1755892594  0.065425396  0.275596138
+polity2a       0.16166518 -0.064847825 -0.2862706451 -0.279378789  0.226497589
+polity2b       0.15786834 -0.094904771 -0.2619543466 -0.057347635  0.191829926
+cinc1          0.35417832  0.104314576  0.2335804763  0.056144795 -0.121580924
+cinc2          0.12237127 -0.356718981  0.2886334066 -0.062172455  0.246992503
+nmc_ratio     -0.11783789 -0.043372183 -0.0956523563  0.027504440 -0.198092766
+smoothtotrade  0.29038215 -0.101278795 -0.0990708373  0.102771387 -0.414121286
+logtrade       0.30474886 -0.114639760 -0.2292667469 -0.002860555  0.138129542
+gdp1           0.36634676 -0.004344013 -0.0097451603  0.005953161 -0.369023608
+gdppp1         0.20363647 -0.092933370 -0.3883088076 -0.040054888  0.009244133
+pop1           0.23970717  0.132389014  0.2855964433  0.057535449  0.045071967
+area1          0.24448016  0.131525131  0.2643602741  0.071885068  0.065695897
+fdi1           0.29889548 -0.047196213 -0.1055811971  0.060184150 -0.269897507
+gdp2           0.18516935 -0.352073777  0.0612074402  0.059172224  0.205080114
+gdppp2         0.11640931 -0.072101267 -0.3192860378  0.470604161  0.127880894
+pop2           0.09205760 -0.311378955  0.3408722231 -0.102834985  0.236869141
+area2          0.11977717 -0.254178896  0.2299922770 -0.078411655 -0.230307550
+fdi2           0.15396016 -0.262260839 -0.0124895493  0.077184886  0.154705279
+gdp_ratio      0.21630825  0.357617677 -0.0008532651 -0.175550423  0.126293239
+gdppp_ratio    0.10225031  0.066891498 -0.0745715085 -0.659399861 -0.041497575
+pop_ratio      0.18207701  0.363586753  0.0441955944  0.202229592  0.167902314
+area_ratio     0.14124478  0.311515602  0.1123995381  0.214253773  0.253426823
+fdi_ratio      0.17239666  0.237758690 -0.0252621037 -0.286733400  0.115346061
+                      PC6          PC7          PC8          PC9         PC10
+conttype       0.04959127 -0.643918469  0.421466322  0.200614527  0.357426450
+polity2a       0.41268920  0.138239999 -0.072536458  0.071260942  0.185578205
+polity2b       0.53315644  0.224046175  0.025193162  0.035966132 -0.028029937
+cinc1          0.16331567 -0.122928382  0.180694342 -0.164259382 -0.159699685
+cinc2         -0.12843630  0.036156896  0.055787157 -0.059310181  0.106394237
+nmc_ratio     -0.13378125  0.542410380  0.657048210 -0.190549005  0.238151387
+smoothtotrade -0.01373941  0.050329869 -0.028391472  0.206902480  0.103583781
+logtrade       0.06237605  0.121184538 -0.052604369 -0.290504930 -0.064340215
+gdp1           0.04476569 -0.093504389 -0.017226036  0.008923666  0.167661179
+gdppp1        -0.34318249 -0.124985639 -0.082260182 -0.295861985 -0.162614664
+pop1           0.21451129 -0.120916639  0.395216638 -0.105033507 -0.412284288
+area1          0.08595794  0.052802775 -0.259811590 -0.194332898  0.003294816
+fdi1          -0.06230591 -0.009918877  0.092013832  0.390760030 -0.156523092
+gdp2          -0.12130863  0.118059551  0.092874646  0.019281896 -0.036885398
+gdppp2        -0.21504535 -0.107271907 -0.051878306 -0.320873290 -0.013116627
+pop2          -0.12139179  0.008192983  0.076892369 -0.037633038  0.024246629
+area2          0.05012938 -0.095613306 -0.198700446 -0.185125652  0.555763678
+fdi2          -0.23465073  0.156855692 -0.047208107  0.545290434 -0.146724166
+gdp_ratio     -0.20371701  0.055834163  0.005901707  0.063746281  0.173564181
+gdppp_ratio   -0.24653241 -0.083071299 -0.011963554 -0.031248110 -0.140130018
+pop_ratio     -0.07961044  0.111639148  0.013342917  0.091471161  0.279791024
+area_ratio    -0.11214399  0.249470352 -0.162775657  0.133202251  0.106440280
+fdi_ratio     -0.21517547  0.048667888  0.142833696 -0.052509385  0.087604944
+                      PC11         PC12         PC13         PC14         PC15
+conttype      -0.280759276 -0.027633324  0.131624336 -0.023215297  0.020371382
+polity2a       0.081191491 -0.111758581 -0.072333627 -0.143090786 -0.438340391
+polity2b       0.004328810  0.147730942  0.005274667  0.265762381  0.626643072
+cinc1         -0.043382226 -0.044113774 -0.068039387 -0.100388606  0.077734843
+cinc2          0.011868449  0.176548097 -0.014574105  0.140835006 -0.059497164
+nmc_ratio     -0.232419208 -0.170520265  0.004658693  0.021569463  0.018942903
+smoothtotrade -0.072335324  0.443573343  0.136890177 -0.323636354 -0.047454832
+logtrade      -0.061715745 -0.127525071 -0.023904468 -0.083720325 -0.411266559
+gdp1          -0.046592922  0.166969377 -0.123597225 -0.029847608  0.050280797
+gdppp1        -0.072736957  0.015253746 -0.193855997  0.034219829  0.176010173
+pop1           0.198368438 -0.090987105 -0.227470721 -0.139380294 -0.010873414
+area1         -0.502267228 -0.330208213  0.504767099 -0.009331215  0.069527413
+fdi1           0.082706867 -0.206591407  0.166906129  0.667871539 -0.239639597
+gdp2          -0.028290829  0.249728241  0.198206643 -0.217455167  0.018300036
+gdppp2         0.169884309 -0.073589268  0.023454188  0.099249382  0.065815534
+pop2           0.006892142  0.186430571 -0.107720273  0.294004958 -0.105007119
+area2          0.240368514 -0.334286990 -0.166285170  0.043648852  0.193428393
+fdi2           0.004558761 -0.467530209 -0.128855148 -0.349910553  0.235999146
+gdp_ratio     -0.048164374 -0.006348155 -0.263938561  0.020924431  0.039755576
+gdppp_ratio   -0.281010348  0.012745115 -0.099721584  0.046844682  0.112601700
+pop_ratio      0.117150835 -0.015021031 -0.235533058 -0.005598776 -0.024813684
+area_ratio    -0.167241325  0.260902179 -0.079858750  0.140611092 -0.009052636
+fdi_ratio      0.577121547  0.015346168  0.573445011 -0.090814252  0.117387715
+                      PC16         PC17         PC18         PC19         PC20
+conttype      -0.105229502 -0.039979685 -0.098121090  0.058061219 -0.042483384
+polity2a       0.522328967  0.042219073 -0.087912051  0.053557717  0.023068367
+polity2b      -0.135231492 -0.051729309  0.107454635  0.006837844 -0.044830020
+cinc1          0.092291915 -0.049021735 -0.096594207 -0.177253161  0.204319777
+cinc2          0.063073349  0.008219874  0.046301888 -0.106244247  0.033927538
+nmc_ratio      0.087319503 -0.043757476 -0.061914105  0.028069413 -0.007219031
+smoothtotrade  0.020998537 -0.140694527  0.225461556  0.382781783 -0.301045588
+logtrade      -0.693835324 -0.183361614 -0.005117519 -0.022635633 -0.007196152
+gdp1           0.084298207 -0.207564380 -0.182207125 -0.482326879  0.304917556
+gdppp1         0.187011921  0.206558115 -0.320156418 -0.137769786 -0.516341686
+pop1           0.046051628  0.098563832 -0.037044349  0.340495339 -0.134073483
+area1          0.176954574  0.008197307  0.122795984 -0.009602655 -0.173776001
+fdi1          -0.015356988  0.213387532  0.010483146  0.048498157 -0.002631751
+gdp2          -0.049120038  0.640599807  0.048098057 -0.060623206  0.260552761
+gdppp2         0.280841249 -0.209478971  0.279134320  0.266603841  0.394901546
+pop2           0.133616521 -0.430935021  0.115301516 -0.021337713 -0.255789617
+area2         -0.129409609  0.178347520 -0.132894812  0.323033818 -0.018770102
+fdi2          -0.002739573 -0.236227645 -0.065050464 -0.046532140  0.023820445
+gdp_ratio     -0.036593268  0.118232786  0.358725850 -0.026959991  0.006967063
+gdppp_ratio   -0.006371183 -0.035485162  0.133125720  0.296819187  0.322011206
+pop_ratio     -0.032078950  0.155216591  0.322595483 -0.209468490 -0.186459295
+area_ratio    -0.033569831 -0.051433405 -0.603666718  0.340315191  0.152205454
+fdi_ratio     -0.025795125 -0.159794438 -0.149550620 -0.054220141 -0.049017912
+                      PC21         PC22          PC23
+conttype       0.007660322 -0.001444043 -1.314461e-04
+polity2a      -0.001060680  0.038428568 -2.128248e-03
+polity2b      -0.016644854 -0.013030157  1.109471e-03
+cinc1         -0.235542327  0.700562826 -3.912647e-04
+cinc2         -0.726232255 -0.269976688 -4.223688e-03
+nmc_ratio      0.004347649 -0.008274122  9.522928e-04
+smoothtotrade -0.125475817  0.069256381 -5.986112e-04
+logtrade      -0.002520886 -0.005987695  2.130384e-03
+gdp1           0.214927459 -0.431610103  2.520346e-04
+gdppp1        -0.037555198  0.029802217 -2.348760e-04
+pop1           0.091482181 -0.407255084 -9.702923e-04
+area1          0.053723702 -0.165677305 -6.731572e-04
+fdi1          -0.025275549  0.038005507 -3.565276e-04
+gdp2           0.334479255  0.069494921  1.929641e-03
+gdppp2         0.013728334 -0.031906589 -1.110488e-03
+pop2           0.473920321  0.194299521  3.292604e-03
+area2          0.064588409  0.055600920  1.128704e-03
+fdi2          -0.023730210  0.005011990  4.490729e-05
+gdp_ratio      0.007534599  0.009361213 -6.933589e-01
+gdppp_ratio    0.001624015 -0.017850557  3.734443e-01
+pop_ratio     -0.001306285  0.018179989  6.162337e-01
+area_ratio     0.006073111  0.019754711 -2.816947e-04
+fdi_ratio      0.001963195 -0.002426945 -6.785207e-04</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb88"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fviz_pca_var</span>(pca, <span class="at">col.var =</span> <span class="st">"contrib"</span>, <span class="at">repel =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">gradient.cols =</span> <span class="fu">c</span>(<span class="st">"#0072B2"</span>, <span class="st">"#F0E442"</span>, <span class="st">"#009E73"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/pca-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="modelling-pipeline" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-pipeline">Modelling Pipeline</h2>
+<p>In this section, I mainly rely on tidymodels package to construct a pipeline for modelling. I employ several kinds of models to predict the MID onset on the test data based on the fitted models on the training data. Given the disproportionate amount of missingness shown in the description, I aggressively filter out observations with missing values, which still yields reasonable observations for training and testing. Split the data into training and test data sets based on time period as follows:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb89"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">&lt;=</span> <span class="dv">2000</span>)</span>
+<span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a>test  <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(year <span class="sc">&gt;</span> <span class="dv">2000</span>)</span>
+<span id="cb89-3"><a href="#cb89-3" aria-hidden="true" tabindex="-1"></a>xvar <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"ccode1"</span>, <span class="st">"ccode2"</span>, <span class="st">"year"</span>, <span class="st">"mid"</span>, <span class="st">"conttype"</span>, <span class="st">"joint_dem"</span>, </span>
+<span id="cb89-4"><a href="#cb89-4" aria-hidden="true" tabindex="-1"></a>          <span class="st">"ally"</span>, <span class="st">"nmc_ratio"</span>, <span class="st">"logtrade"</span>, <span class="st">"trdspike"</span>, <span class="st">"tradedip"</span>,</span>
+<span id="cb89-5"><a href="#cb89-5" aria-hidden="true" tabindex="-1"></a>          <span class="st">"gdp_ratio"</span>, <span class="st">"gdppp_ratio"</span>, <span class="st">"pop_ratio"</span>, <span class="st">"area_ratio"</span>, <span class="st">"fdi_ratio"</span>)</span>
+<span id="cb89-6"><a href="#cb89-6" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> train[<span class="fu">complete.cases</span>(train[, xvar]), xvar]</span>
+<span id="cb89-7"><a href="#cb89-7" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> test[<span class="fu">complete.cases</span>(test[, xvar]), xvar]</span>
+<span id="cb89-8"><a href="#cb89-8" aria-hidden="true" tabindex="-1"></a>train<span class="sc">$</span>mid <span class="ot">&lt;-</span> <span class="fu">factor</span>(train<span class="sc">$</span>mid, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">0</span>))</span>
+<span id="cb89-9"><a href="#cb89-9" aria-hidden="true" tabindex="-1"></a>test<span class="sc">$</span>mid  <span class="ot">&lt;-</span> <span class="fu">factor</span>(test<span class="sc">$</span>mid, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">0</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Before model estimation, continuous predictors are standardized using centering and scaling. Standardization is particularly important for machine learning models such as SVM and regularized regression, which are sensitive to differences in variable scale. I use logistic regression as the baseline model, as it is perhaps the most widely used statistical method for prediction in established political science research. I then complement it with a LASSO-regularized logistic regression. The LASSO model uses 10-fold cross-validation to select the optimal penalty parameter, shrinking less informative coefficients toward zero to reduce overfitting and perform implicit variable selection. Second, I implement a Random Forest classifier. Previous work has shown that Random Forest models can substantially outperform logistic regression in predicting conflict onset under conditions of extreme class imbalance <span class="citation" data-cites="muchlinski2016comparing">(<a href="#ref-muchlinski2016comparing" role="doc-biblioref">Muchlinski et al. 2016</a>)</span>. Random Forests are able to capture nonlinear relationships and complex interactions among predictors that linear models may miss. Third, I employ a support vector machine (SVM) with a radial basis function kernel, which is well suited for classification problems in high-dimensional feature spaces and can flexibly model nonlinear decision boundaries. Finally, I implement a gradient boosting model using XGBoost, a powerful ensemble learning method that builds trees sequentially to minimize prediction error. XGBoost is particularly effective at capturing complex nonlinear patterns and interactions while incorporating regularization to prevent overfitting.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb90"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a>data_recipe <span class="ot">&lt;-</span> <span class="fu">recipe</span>(mid <span class="sc">~</span> conttype <span class="sc">+</span> joint_dem <span class="sc">+</span> ally <span class="sc">+</span> nmc_ratio <span class="sc">+</span> </span>
+<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>                        logtrade <span class="sc">+</span> trdspike <span class="sc">+</span> tradedip <span class="sc">+</span> gdp_ratio <span class="sc">+</span> </span>
+<span id="cb90-3"><a href="#cb90-3" aria-hidden="true" tabindex="-1"></a>                        gdppp_ratio <span class="sc">+</span> pop_ratio <span class="sc">+</span> area_ratio <span class="sc">+</span> fdi_ratio, </span>
+<span id="cb90-4"><a href="#cb90-4" aria-hidden="true" tabindex="-1"></a>                      <span class="at">data =</span> train) <span class="sc">%&gt;%</span></span>
+<span id="cb90-5"><a href="#cb90-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_dummy</span>(<span class="fu">all_nominal_predictors</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb90-6"><a href="#cb90-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_scale</span>(<span class="fu">all_predictors</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb90-7"><a href="#cb90-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_center</span>(<span class="fu">all_predictors</span>())</span>
+<span id="cb90-8"><a href="#cb90-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb90-9"><a href="#cb90-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Model Specfications</span></span>
+<span id="cb90-10"><a href="#cb90-10" aria-hidden="true" tabindex="-1"></a><span class="co"># logit</span></span>
+<span id="cb90-11"><a href="#cb90-11" aria-hidden="true" tabindex="-1"></a>model1 <span class="ot">&lt;-</span> <span class="fu">logistic_reg</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb90-12"><a href="#cb90-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"glm"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb90-13"><a href="#cb90-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span>
+<span id="cb90-14"><a href="#cb90-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb90-15"><a href="#cb90-15" aria-hidden="true" tabindex="-1"></a><span class="co"># lasso</span></span>
+<span id="cb90-16"><a href="#cb90-16" aria-hidden="true" tabindex="-1"></a>model2 <span class="ot">&lt;-</span> <span class="fu">logistic_reg</span>(<span class="at">penalty =</span> <span class="fu">tune</span>(), <span class="at">mixture =</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb90-17"><a href="#cb90-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"glmnet"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb90-18"><a href="#cb90-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span>
+<span id="cb90-19"><a href="#cb90-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb90-20"><a href="#cb90-20" aria-hidden="true" tabindex="-1"></a><span class="co"># random forest</span></span>
+<span id="cb90-21"><a href="#cb90-21" aria-hidden="true" tabindex="-1"></a>model3 <span class="ot">&lt;-</span> <span class="fu">rand_forest</span>(<span class="at">mtry =</span> <span class="fu">tune</span>(), <span class="at">trees =</span> <span class="dv">1000</span>, <span class="at">min_n =</span> <span class="fu">tune</span>()) <span class="sc">%&gt;%</span> </span>
+<span id="cb90-22"><a href="#cb90-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"ranger"</span>, </span>
+<span id="cb90-23"><a href="#cb90-23" aria-hidden="true" tabindex="-1"></a>             <span class="at">importance =</span> <span class="st">"permutation"</span>,</span>
+<span id="cb90-24"><a href="#cb90-24" aria-hidden="true" tabindex="-1"></a>             <span class="at">probability =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb90-25"><a href="#cb90-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span>
+<span id="cb90-26"><a href="#cb90-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb90-27"><a href="#cb90-27" aria-hidden="true" tabindex="-1"></a><span class="co"># svm</span></span>
+<span id="cb90-28"><a href="#cb90-28" aria-hidden="true" tabindex="-1"></a>model4 <span class="ot">&lt;-</span> <span class="fu">svm_rbf</span>(<span class="at">cost =</span> <span class="fu">tune</span>(), <span class="at">rbf_sigma =</span> <span class="fu">tune</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb90-29"><a href="#cb90-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"kernlab"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb90-30"><a href="#cb90-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span>
+<span id="cb90-31"><a href="#cb90-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb90-32"><a href="#cb90-32" aria-hidden="true" tabindex="-1"></a><span class="co"># xgboost</span></span>
+<span id="cb90-33"><a href="#cb90-33" aria-hidden="true" tabindex="-1"></a>model5 <span class="ot">&lt;-</span> <span class="fu">boost_tree</span>(<span class="at">trees =</span> <span class="fu">tune</span>(), <span class="at">tree_depth =</span> <span class="fu">tune</span>(), <span class="at">learn_rate =</span> <span class="fu">tune</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb90-34"><a href="#cb90-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb90-35"><a href="#cb90-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"xgboost"</span>)</span>
+<span id="cb90-36"><a href="#cb90-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb90-37"><a href="#cb90-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb90-38"><a href="#cb90-38" aria-hidden="true" tabindex="-1"></a><span class="co"># workflow</span></span>
+<span id="cb90-39"><a href="#cb90-39" aria-hidden="true" tabindex="-1"></a>wf <span class="ot">&lt;-</span> <span class="fu">workflow_set</span>(<span class="at">preproc =</span> <span class="fu">list</span>(<span class="at">recipe =</span> data_recipe),</span>
+<span id="cb90-40"><a href="#cb90-40" aria-hidden="true" tabindex="-1"></a>                   <span class="at">models =</span> <span class="fu">list</span>(<span class="at">logit =</span> model1,</span>
+<span id="cb90-41"><a href="#cb90-41" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">lasso =</span> model2,</span>
+<span id="cb90-42"><a href="#cb90-42" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">rf =</span> model3,</span>
+<span id="cb90-43"><a href="#cb90-43" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">svm =</span> model4,</span>
+<span id="cb90-44"><a href="#cb90-44" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">xgboost =</span> model5))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>To evaluate model performance and tune hyperparameters, I implement 10-fold cross-validation on the training data. Within each fold, the models are trained on four subsets of the data and validated on the remaining subset, allowing performance to be assessed across multiple resamples and reducing the risk of overfitting to a single train–test split. Hyperparameters for the models are tuned using a grid search procedure, where a set of candidate parameter values is evaluated for each model specification. Model performance is primarily assessed using the area under the receiver operating characteristic curve (ROC AUC), which is particularly appropriate as MID onset is an extremely rare event.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb91"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a>cv_folds <span class="ot">&lt;-</span> <span class="fu">vfold_cv</span>(train, <span class="at">v =</span> <span class="dv">10</span>)</span>
+<span id="cb91-2"><a href="#cb91-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb91-3"><a href="#cb91-3" aria-hidden="true" tabindex="-1"></a>wf_results <span class="ot">&lt;-</span> wf <span class="sc">%&gt;%</span> </span>
+<span id="cb91-4"><a href="#cb91-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">workflow_map</span>(<span class="at">fn =</span> <span class="st">"tune_grid"</span>, </span>
+<span id="cb91-5"><a href="#cb91-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">resamples =</span> cv_folds, </span>
+<span id="cb91-6"><a href="#cb91-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">grid =</span> <span class="dv">5</span>,</span>
+<span id="cb91-7"><a href="#cb91-7" aria-hidden="true" tabindex="-1"></a>               <span class="at">metrics =</span> <span class="fu">metric_set</span>(roc_auc, accuracy),</span>
+<span id="cb91-8"><a href="#cb91-8" aria-hidden="true" tabindex="-1"></a>               <span class="at">verbose =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>i   No tuning parameters. `fit_resamples()` will be attempted</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>i 1 of 5 resampling: recipe_logit</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>✔ 1 of 5 resampling: recipe_logit (3s)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>i 2 of 5 tuning:     recipe_lasso</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>✔ 2 of 5 tuning:     recipe_lasso (11.1s)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>i 3 of 5 tuning:     recipe_rf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>i Creating pre-processing data to finalize 1 unknown parameter: "mtry"</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>✔ 3 of 5 tuning:     recipe_rf (12m 9.9s)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>i 4 of 5 tuning:     recipe_svm</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>maximum number of iterations reached 0.0005455059 -0.0005415906maximum number of iterations reached -0.000286319 0.0002867309maximum number of iterations reached 0.002118162 -0.002074488maximum number of iterations reached -0.0004260673 0.000427545maximum number of iterations reached 0.00122093 -0.001201072maximum number of iterations reached 0.001511244 -0.001495048maximum number of iterations reached 0.002261595 -0.002197184maximum number of iterations reached 0.0006901071 -0.0006877216maximum number of iterations reached 0.001770839 -0.001733128maximum number of iterations reached 0.001076482 -0.001067154maximum number of iterations reached 0.003597527 -0.003443109maximum number of iterations reached 0.0001063614 -0.0001062946maximum number of iterations reached 0.00238746 -0.002327581maximum number of iterations reached 0.00157282 -0.001558292maximum number of iterations reached 0.001922909 -0.001882289maximum number of iterations reached 0.0009893869 -0.0009828743maximum number of iterations reached 0.00420803 -0.003981055maximum number of iterations reached 0.0008793576 -0.0008752951maximum number of iterations reached 0.004067684 -0.003886322maximum number of iterations reached 0.001242863 -0.001233502</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>✔ 4 of 5 tuning:     recipe_svm (2m 53s)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>i 5 of 5 tuning:     recipe_xgboost</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>✔ 5 of 5 tuning:     recipe_xgboost (2m 7.4s)</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb105"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(wf_results, </span>
+<span id="cb105-2"><a href="#cb105-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">rank_metric =</span> <span class="st">"roc_auc"</span>, </span>
+<span id="cb105-3"><a href="#cb105-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">metric =</span> <span class="st">"roc_auc"</span>) <span class="sc">+</span></span>
+<span id="cb105-4"><a href="#cb105-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text_repel</span>(<span class="fu">aes</span>(<span class="at">label =</span> wflow_id, </span>
+<span id="cb105-5"><a href="#cb105-5" aria-hidden="true" tabindex="-1"></a>                      <span class="at">y =</span> mean <span class="sc">+</span><span class="fl">1.95</span><span class="sc">*</span>std_err), </span>
+<span id="cb105-6"><a href="#cb105-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">max.overlaps =</span> <span class="dv">10</span>) <span class="sc">+</span></span>
+<span id="cb105-7"><a href="#cb105-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: ggrepel: 3 unlabeled data points (too many overlaps). Consider
+increasing max.overlaps</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/hyper-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="results-and-evaluation" class="level2">
+<h2 class="anchored" data-anchor-id="results-and-evaluation">Results and Evaluation</h2>
+<p>After completing the cross-validation and hyperparameter tuning process, I identify the best-performing model based on the evaluation metrics collected from the workflow results. Specifically, the model with the highest accuracy is selected as the optimal specification. The corresponding workflow is then extracted and finalized using the best hyperparameter combination obtained during tuning. This finalized workflow is refitted on the full training dataset to ensure that the model benefits from all available training observations. The trained model is subsequently used to generate predictions on the held-out test dataset. To evaluate predictive performance, I compute a confusion matrix comparing predicted and observed MID outcomes, and I further calculate the area under the receiver operating characteristic curve (ROC AUC). In addition, I visualize the ROC curve to assess the model’s ability to distinguish between conflict and non-conflict cases across different classification thresholds.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb107"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a><span class="do">## collect metrics</span></span>
+<span id="cb107-2"><a href="#cb107-2" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> wf_results <span class="sc">%&gt;%</span> <span class="fu">collect_metrics</span>()</span>
+<span id="cb107-3"><a href="#cb107-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb107-4"><a href="#cb107-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Select the best model</span></span>
+<span id="cb107-5"><a href="#cb107-5" aria-hidden="true" tabindex="-1"></a>best_model <span class="ot">&lt;-</span> results <span class="sc">%&gt;%</span> </span>
+<span id="cb107-6"><a href="#cb107-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.metric <span class="sc">==</span> <span class="st">"roc_auc"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb107-7"><a href="#cb107-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(mean)) <span class="sc">%&gt;%</span></span>
+<span id="cb107-8"><a href="#cb107-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb107-9"><a href="#cb107-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(wflow_id)</span>
+<span id="cb107-10"><a href="#cb107-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb107-11"><a href="#cb107-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">'best model is: '</span>,best_model, <span class="st">'</span><span class="sc">\n</span><span class="st">'</span>) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>best model is:  recipe_rf </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="co"># extract the optimization results of the model</span></span>
+<span id="cb109-2"><a href="#cb109-2" aria-hidden="true" tabindex="-1"></a>best_tune_results <span class="ot">&lt;-</span> wf_results <span class="sc">%&gt;%</span> </span>
+<span id="cb109-3"><a href="#cb109-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_workflow_set_result</span>(<span class="at">id =</span> best_model)</span>
+<span id="cb109-4"><a href="#cb109-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb109-5"><a href="#cb109-5" aria-hidden="true" tabindex="-1"></a><span class="co"># choose the optimal parameter combination</span></span>
+<span id="cb109-6"><a href="#cb109-6" aria-hidden="true" tabindex="-1"></a>best_params <span class="ot">&lt;-</span> best_tune_results <span class="sc">%&gt;%</span> </span>
+<span id="cb109-7"><a href="#cb109-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select_best</span>(<span class="at">metric =</span> <span class="st">"roc_auc"</span>)</span>
+<span id="cb109-8"><a href="#cb109-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb109-9"><a href="#cb109-9" aria-hidden="true" tabindex="-1"></a><span class="co"># return the optimal parameters</span></span>
+<span id="cb109-10"><a href="#cb109-10" aria-hidden="true" tabindex="-1"></a>best_workflow <span class="ot">&lt;-</span> wf_results <span class="sc">%&gt;%</span> </span>
+<span id="cb109-11"><a href="#cb109-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_workflow</span>(<span class="at">id =</span> best_model) <span class="sc">%&gt;%</span> </span>
+<span id="cb109-12"><a href="#cb109-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">finalize_workflow</span>(best_params)</span>
+<span id="cb109-13"><a href="#cb109-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb109-14"><a href="#cb109-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Refit the best model on the full training data</span></span>
+<span id="cb109-15"><a href="#cb109-15" aria-hidden="true" tabindex="-1"></a>wf_best_fit <span class="ot">&lt;-</span> best_workflow <span class="sc">%&gt;%</span> <span class="fu">fit</span>(<span class="at">data =</span> train)</span>
+<span id="cb109-16"><a href="#cb109-16" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(wf_best_fit)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        Length Class      Mode   
+pre     3      stage_pre  list   
+fit     2      stage_fit  list   
+post    2      stage_post list   
+trained 1      -none-     logical</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb111"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Make predictions on the test data</span></span>
+<span id="cb111-2"><a href="#cb111-2" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> wf_best_fit <span class="sc">%&gt;%</span> </span>
+<span id="cb111-3"><a href="#cb111-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(<span class="at">new_data =</span> test, <span class="at">type =</span> <span class="st">"class"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb111-4"><a href="#cb111-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(test)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The confusion matrix indicates that the model correctly identifies 62 MID events (true positives) and 5,352 peaceful dyad–years (true negatives), while producing 38 false positives and missing 309 actual conflict events (false negatives). This corresponds to an overall accuracy of approximately 94 percent. However, because MID onset is an extremely rare event in the dataset, accuracy alone is not an informative performance measure. The model achieves a precision of about 0.62, meaning that roughly sixty-two percent of predicted conflict cases correspond to actual MID onsets. In contrast, recall is relatively low at approximately 0.17, indicating that the model detects only a limited share of all conflict events. At the same time, the model exhibits very high specificity (around 0.99), reflecting its strong ability to correctly classify peaceful dyads. Overall, the results suggest that the model is conservative in predicting conflict: when it signals a MID event it is often correct, but it misses a substantial number of actual disputes due to the extreme class imbalance in the data.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb112"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb112-1"><a href="#cb112-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize the predictions</span></span>
+<span id="cb112-2"><a href="#cb112-2" aria-hidden="true" tabindex="-1"></a>conf_mat <span class="ot">&lt;-</span> pred <span class="sc">%&gt;%</span> </span>
+<span id="cb112-3"><a href="#cb112-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">conf_mat</span>(<span class="at">truth =</span> mid, <span class="at">estimate =</span> .pred_class)</span>
+<span id="cb112-4"><a href="#cb112-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb112-5"><a href="#cb112-5" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(conf_mat)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Truth
+Prediction    1    0
+         1   62   40
+         0  309 5350</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">table</span>(pred<span class="sc">$</span>mid, pred<span class="sc">$</span>.pred_class),</span>
+<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">"#56B4E9"</span>,</span>
+<span id="cb114-3"><a href="#cb114-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Confusion Matrix"</span>,</span>
+<span id="cb114-4"><a href="#cb114-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"True Class"</span>,</span>
+<span id="cb114-5"><a href="#cb114-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">"Predicted Class"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/matrix-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The ROC AUC on the held-out test data is approximately 0.79, indicating that the model is able to meaningfully distinguish dyads that experience MID onset from those that do not. Although MID onset is an extremely rare event in the dataset, the model captures sufficient predictive signal from structural covariates to rank higher-risk dyads above lower-risk ones with reasonably strong accuracy.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb115"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb115-1"><a href="#cb115-1" aria-hidden="true" tabindex="-1"></a>pred.prob <span class="ot">&lt;-</span> wf_best_fit <span class="sc">%&gt;%</span></span>
+<span id="cb115-2"><a href="#cb115-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(<span class="at">new_data =</span> test , <span class="at">type =</span> <span class="st">"prob"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb115-3"><a href="#cb115-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(test)</span>
+<span id="cb115-4"><a href="#cb115-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb115-5"><a href="#cb115-5" aria-hidden="true" tabindex="-1"></a><span class="co"># AUC</span></span>
+<span id="cb115-6"><a href="#cb115-6" aria-hidden="true" tabindex="-1"></a>the_roc_auc <span class="ot">&lt;-</span> <span class="fu">roc_auc</span>(pred.prob, <span class="at">truth =</span> mid, .pred_1)</span>
+<span id="cb115-7"><a href="#cb115-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb115-8"><a href="#cb115-8" aria-hidden="true" tabindex="-1"></a><span class="co"># ROC curve</span></span>
+<span id="cb115-9"><a href="#cb115-9" aria-hidden="true" tabindex="-1"></a>pred.prob <span class="sc">%&gt;%</span> <span class="fu">roc_curve</span>(mid, .pred_1) <span class="sc">%&gt;%</span> </span>
+<span id="cb115-10"><a href="#cb115-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">autoplot</span>()<span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="fu">paste</span>(the_roc_auc, <span class="at">collapse =</span> <span class="st">", "</span>) )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/ROC-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>I present the variable importance rankings from the best-performing model. The most influential predictors are the relative economic and demographic indicatorsbetween dyad members, including GDP ratio, population ratio, territorial area ratio, and GDP per capita ratio. These variables capture the relative size and economic capacity of states within a dyad, suggesting that asymmetries in economic and demographic characteristics contain substantial predictive signal for MID onset. Measures related to material power and economic interaction also appear among the top predictors. The capability ratio (nmc_ratio) and the logged trade variable (logtrade) contribute meaningfully to the model, indicating that both military capabilities and economic interdependence are associated with variation in predicted conflict risk. Geographic contiguity (conttype) shows moderate importance in the model, reflecting the role of spatial proximity in shaping opportunities for interstate disputes. Other variables, including foreign direct investment ratio, joint democracy, and formal alliances, appear lower in the importance ranking, suggesting that these factors contribute less to predictive performance in the current specification.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb116"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a>rf_fit <span class="ot">&lt;-</span> wf_best_fit <span class="sc">%&gt;%</span></span>
+<span id="cb116-2"><a href="#cb116-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_fit_parsnip</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb116-3"><a href="#cb116-3" aria-hidden="true" tabindex="-1"></a>  .<span class="sc">$</span>fit</span>
+<span id="cb116-4"><a href="#cb116-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb116-5"><a href="#cb116-5" aria-hidden="true" tabindex="-1"></a><span class="fu">vip</span>(rf_fit, <span class="at">num_features =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/vip-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>I show partial dependence plots (PDPs) for the 3 most important predictors identified by the VIP plot: gdp_ratio, pop_ratio, and area_ratio as they affect the model’s predicted probability of MID onset while holding other variables constant. Across all three variables, the predicted probability of conflict generally increases as the ratios become larger, indicating that greater asymmetry between two states is associated with a higher predicted risk of dispute. In particular, the predicted probability rises from roughly 0.07 to about 0.23 across the range of gdp_ratio, from about 0.09 to 0.17 for pop_ratio, and from around 0.06 to 0.23 for area_ratio. Overall, these patterns suggest that structural differences in economic capacity, population size, and territorial area between dyad members are important predictors in the model, with larger imbalances corresponding to higher predicted probabilities of militarized interstate disputes.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a>prep_rec <span class="ot">&lt;-</span> <span class="fu">prep</span>(data_recipe)</span>
+<span id="cb117-2"><a href="#cb117-2" aria-hidden="true" tabindex="-1"></a>train_processed <span class="ot">&lt;-</span> <span class="fu">bake</span>(prep_rec, <span class="at">new_data =</span> train)</span>
+<span id="cb117-3"><a href="#cb117-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb117-4"><a href="#cb117-4" aria-hidden="true" tabindex="-1"></a>pdp1 <span class="ot">&lt;-</span> pdp<span class="sc">::</span><span class="fu">partial</span>(rf_fit, <span class="at">pred.var =</span> <span class="st">"gdp_ratio"</span>,</span>
+<span id="cb117-5"><a href="#cb117-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">train =</span> train_processed, <span class="at">prob =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb117-6"><a href="#cb117-6" aria-hidden="true" tabindex="-1"></a><span class="fu">plotPartial</span>(pdp1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/pdp-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb118"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb118-1"><a href="#cb118-1" aria-hidden="true" tabindex="-1"></a>pdp2 <span class="ot">&lt;-</span> pdp<span class="sc">::</span><span class="fu">partial</span>(rf_fit, <span class="at">pred.var =</span> <span class="st">"pop_ratio"</span>,</span>
+<span id="cb118-2"><a href="#cb118-2" aria-hidden="true" tabindex="-1"></a>                     <span class="at">train =</span> train_processed, <span class="at">prob =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb118-3"><a href="#cb118-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plotPartial</span>(pdp2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/pdp-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a>pdp3 <span class="ot">&lt;-</span> pdp<span class="sc">::</span><span class="fu">partial</span>(rf_fit, <span class="at">pred.var =</span> <span class="st">"area_ratio"</span>,</span>
+<span id="cb119-2"><a href="#cb119-2" aria-hidden="true" tabindex="-1"></a>                     <span class="at">train =</span> train_processed, <span class="at">prob =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb119-3"><a href="#cb119-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plotPartial</span>(pdp3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="26-03-12_files/figure-html/pdp-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>To summarize, these findings broadly align with previous research on conflict prediction. <span class="citation" data-cites="muchlinski2016comparing">(<a href="#ref-muchlinski2016comparing" role="doc-biblioref">Muchlinski et al. 2016</a>)</span> demonstrate that machine learning models often outperform traditional statistical models in forecasting interstate disputes, largely due to their ability to capture nonlinear interactions among predictors. At the same time, the relatively modest predictive gains observed here are consistent with recent work suggesting that structural variables alone may provide limited predictive power for rare political events.</p>
+</section>
+<section id="potential-limitations" class="level2">
+<h2 class="anchored" data-anchor-id="potential-limitations">Potential Limitations</h2>
+<p>Predicting MID onset presents a fundamental methodological challenge due to extreme class imbalance. With less than 0.5% positive cases, a naïve classifier predicting “no conflict” for all observations would achieve over 99% accuracy. Therefore, accuracy is not an informative metric in this context. The discrepancy between cross-validation performance and time-split test performance, particularly for the random forest model, suggests potential overfitting when models are evaluated on randomly partitioned folds. Time-based splitting provides a more realistic out-of-sample test because it mimics real-world forecasting conditions. Furthermore, the relatively modest AUC values are not supposed to be interpreted as model failure. In rare event political conflict prediction, even moderate discrimination can represent meaningful improvement over baseline guessing. The difficulty reflects both stochastic elements of international politics and the limited observability of strategic decision-making processes.</p>
+<p>Another limitation concerns model interpretability. While machine learning models such as random forests and boosting often improve predictive accuracy, they are typically less transparent than traditional regression models. This trade-off between predictive performance and interpretability remains an ongoing challenge in applying machine learning methods to political science research.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Several substantive findings emerge from the analysis. First, relative economic and demographic indicators appear among the most important predictors in the model. Variables such as GDP ratio, population ratio, and territorial area ratio capture asymmetries in national capabilities and may reflect underlying power dynamics within dyads. These results suggest that structural differences between states contain meaningful information about the likelihood of conflict escalation.</p>
+<p>Second, the relatively modest predictive contribution of joint democracy provides an interesting contrast with the democratic peace literature. While democratic peace theory argues that democratic dyads rarely engage in militarized disputes, the results here suggest that regime type alone contributes relatively little to predictive performance once other structural variables are considered. This finding is consistent with recent work suggesting that some well-known theoretical relationships may have stronger explanatory than predictive power.</p>
+<p>This project set out to evaluate whether structural and political covariates commonly emphasized in the conflict literature meaningfully improve predictive performance of MID onset. Overall, the results suggest three substantive conclusions. First, capability ratio and trade consistently emerge as influential predictors across machine learning and penalized models. This indicates that material structure and economic interdependence contain predictive signal beyond regime type alone. Second, although joint democracy aligns with the democratic peace expectation descriptively, its predictive contribution appears modest in multivariate and machine learning settings. This suggests that democratic peace may be more strongly associated with explanation than pure prediction. Third, the limited overall predictive power of all models reinforces a broader insight: interstate conflict onset is inherently difficult to forecast. Structural covariates provide partial signal, but substantial uncertainty remains. To summarize, my findings suggest that while machine learning methods can improve model flexibility, they do not dramatically outperform simpler logistic regression models in this context. The constraint may lie less in model choice and more in the underlying predictability of rare interstate conflict events.</p>
+<p>Returning to the central research question whether machine learning models improve prediction of MID onset, the results suggest only modest gains relative to traditional logistic regression. Although flexible algorithms such as random forests and gradient boosting capture nonlinear relationships, their overall predictive performance remains limited by the inherent unpredictability of rare interstate conflict events. This finding suggests that improvements in prediction may depend less on algorithmic sophistication and more on incorporating richer behavioral or strategic variables.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-barbieri2016correlates" class="csl-entry" role="listitem">
+Barbieri, K, and OM Keshk. 2016. <span>“Correlates of War Project Trade Data Set Codebook, Version 4.0. Correlates of War.”</span>
+</div>
+<div id="ref-cranmer2017can" class="csl-entry" role="listitem">
+Cranmer, Skyler J, and Bruce A Desmarais. 2017. <span>“What Can We Learn from Predictive Modeling?”</span> <em>Political Analysis</em> 25 (2): 145–66.
+</div>
+<div id="ref-gibler2008international" class="csl-entry" role="listitem">
+Gibler, Douglas M. 2008. <em>International Military Alliances, 1648-2008</em>. CQ Press.
+</div>
+<div id="ref-imai2021robustness" class="csl-entry" role="listitem">
+Imai, Kosuke, and James Lo. 2021. <span>“Robustness of Empirical Evidence for the Democratic Peace: A Nonparametric Sensitivity Analysis.”</span> <em>International Organization</em> 75 (3): 901–19.
+</div>
+<div id="ref-johnson2011defense" class="csl-entry" role="listitem">
+Johnson, Jesse C, and Brett Ashley Leeds. 2011. <span>“Defense Pacts: A Prescription for Peace?”</span> <em>Foreign Policy Analysis</em> 7 (1): 45–65.
+</div>
+<div id="ref-levy1988domestic" class="csl-entry" role="listitem">
+Levy, Jack S. 1988. <span>“Domestic Politics and War.”</span> <em>The Journal of Interdisciplinary History</em> 18 (4): 653–73.
+</div>
+<div id="ref-marshall2002polity" class="csl-entry" role="listitem">
+Marshall, Monty G, Keith Jaggers, and Ted Robert Gurr. 2002. <span>“Polity IV Project: Dataset Users’ Manual.”</span> <em>College Park: University of Maryland</em> 86.
+</div>
+<div id="ref-muchlinski2016comparing" class="csl-entry" role="listitem">
+Muchlinski, David, David Siroky, Jingrui He, and Matthew Kocher. 2016. <span>“Comparing Random Forest with Logistic Regression for Predicting Class-Imbalanced Civil War Onset Data.”</span> <em>Political Analysis</em> 24 (1): 87–103.
+</div>
+<div id="ref-oneal1997classical" class="csl-entry" role="listitem">
+Oneal, John R, and Bruce M Russet. 1997. <span>“The Classical Liberals Were Right: Democracy, Interdependence, and Conflict, 1950–1985.”</span> <em>International Studies Quarterly</em> 41 (2): 267–93.
+</div>
+<div id="ref-palmer2015mid4" class="csl-entry" role="listitem">
+Palmer, Glenn, Vito d’Orazio, Michael Kenwick, and Matthew Lane. 2015. <span>“The MID4 Dataset, 2002–2010: Procedures, Coding Rules and Description.”</span> <em>Conflict Management and Peace Science</em> 32 (2): 222–42.
+</div>
+<div id="ref-singer2012capability" class="csl-entry" role="listitem">
+Singer, J David, Stuart A Bremer, and John Stuckey. 2012. <span>“Capability Distribution, Uncertainty, and Major Power War, 1820–1965 1.”</span> In <em>Advancing Peace Research</em>, 161–74. Routledge.
+</div>
+<div id="ref-stinnett2002correlates" class="csl-entry" role="listitem">
+Stinnett, Douglas M, Jaroslav Tir, Paul F Diehl, Philip Schafer, and Charles Gochman. 2002. <span>“The Correlates of War (Cow) Project Direct Contiguity Data, Version 3.0.”</span> <em>Conflict Management and Peace Science</em> 19 (2): 59–67.
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
